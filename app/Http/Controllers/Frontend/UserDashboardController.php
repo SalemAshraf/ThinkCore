@@ -9,6 +9,11 @@ class UserDashboardController extends Controller
 {
     public function index()
     {
-        return view('frontend.student-Dashboard.dashboard');
+        return view('frontend.student-dashboard.dashboard');
+    }
+
+    public function becomeInstructor()
+    {
+        return view('frontend.student-dashboard.become-instructor');
     }
 }

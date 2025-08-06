@@ -9,7 +9,10 @@ use App\Http\Controllers\Admin\Auth\PasswordController;
 use App\Http\Controllers\Admin\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Admin\Auth\RegisteredUserController;
 use App\Http\Controllers\Admin\Auth\VerifyEmailController;
+use App\Http\Controllers\Admin\CourseLanguageController;
+use App\Http\Controllers\Admin\CourseLevelController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\InstructorRequestController;
 use Illuminate\Support\Facades\Route;
 
 Route::group(["middleware" => "guest:admin", "prefix" => "admin", "as" => "admin."], function () {
@@ -32,7 +35,7 @@ Route::group(["middleware" => "guest:admin", "prefix" => "admin", "as" => "admin
         ->name('password.store');
 });
 
-Route::group(["middleware" => "auth:admin", "prefix" => "admin", "as" => "admin."],function () {
+Route::group(["middleware" => "auth:admin", "prefix" => "admin", "as" => "admin."], function () {
     Route::get('verify-email', EmailVerificationPromptController::class)
         ->name('verification.notice');
 
@@ -54,5 +57,14 @@ Route::group(["middleware" => "auth:admin", "prefix" => "admin", "as" => "admin.
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
         ->name('logout');
 
-    Route::get('dashboard',[DashboardController::class, 'index'])->name('dashboard');
+    Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Instructor Requests
+    Route::get('document-download/{user}', [InstructorRequestController::class, 'download'])->name('document-download');
+    Route::resource('instructors-requests', InstructorRequestController::class);
+
+    //Course Language Routes
+    Route::resource('course-languages', CourseLanguageController::class);
+    //Course Level Routes
+    Route::resource('course-levels', CourseLevelController::class);
 });

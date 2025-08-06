@@ -228,14 +228,30 @@
                     </a>
                 </li>
                 <li>
-                    <a class="admin" href="#">
-                        <span>
-                            <img src="{{ asset('frontend/assets/images/user_icon_black.png') }}" alt="user"
-                                class="img-fluid">
-                        </span>
-                        {{ auth()->user()->name ?? 'student' }}
-                    </a>
-                </li>
+    @auth
+        <a class="admin" href="
+            @if(auth()->user()->role == 'instructor')
+                {{ route('instructor.dashboard') }}
+            @elseif(auth()->user()->role == 'student')
+                {{ route('student.dashboard') }}
+            @else
+                {{ route('/') }}
+            @endif
+        ">
+            <span>
+                <img src="{{ asset('frontend/assets/images/user_icon_black.png') }}" alt="user" class="img-fluid">
+            </span>
+            {{ auth()->user()->name ?? 'student' }}
+        </a>
+    @else
+        <a class="admin" href="{{ route('login') }}">
+            <span>
+                <img src="{{ asset('frontend/assets/images/user_icon_black.png') }}" alt="user" class="img-fluid">
+            </span>
+            Login
+        </a>
+    @endauth
+</li>
                 <li>
                     <a class="common_btn" href="{{ route('login') }}">Sign Up</a>
                 </li>

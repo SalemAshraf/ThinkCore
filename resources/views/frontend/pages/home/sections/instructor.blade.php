@@ -9,7 +9,7 @@
                         </div>
                         <p>LMS allows administrators and instructors to create, organize, and deliver courses. This
                             includes uploading course content, managing materials, and setting assessments.</p>
-                        <a class="common_btn" href="#">Become An Instructor <i class="far fa-arrow-right"></i></a>
+                        <a class="common_btn" href="{{ route('student.become-instructor') }}">Become An Instructor <i class="far fa-arrow-right"></i></a>
                     </div>
                 </div>
                 <div class="col-xl-5 col-md-6 wow fadeInRight">

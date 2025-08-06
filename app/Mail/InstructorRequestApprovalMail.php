@@ -1,0 +1,55 @@
+<?php
+
+namespace App\Mail;
+
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Content;
+use Illuminate\Mail\Mailables\Envelope;
+use Illuminate\Queue\SerializesModels;
+
+class InstructorRequestApprovalMail extends Mailable
+{
+    use Queueable, SerializesModels;
+
+    public $instructor;
+
+    public function __construct($instructor)
+    {
+        $this->instructor = $instructor;
+    }
+
+    /**
+     * Get the message envelope.
+     */
+    public function envelope(): Envelope
+    {
+        return new Envelope(
+            subject: $this->instructor->approved_status === 'approved' ? 'You\'re Approved as an Instructor! 🎉' : 'Instructor Application Status Update',
+        );
+    }
+
+    /**
+     * Get the message content definition.
+     */
+    public function content(): Content
+    {
+        return new Content(
+            view: 'mail.Instructor-RequestApprovalMail',
+            with: [
+                'instructor' => $this->instructor,
+            ],
+        );
+    }
+
+    /**
+     * Get the attachments for the message.
+     *
+     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
+     */
+    public function attachments(): array
+    {
+        return [];
+    }
+}
