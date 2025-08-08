@@ -9,10 +9,14 @@ trait FileUpload
 {
     public function uploadFile(UploadedFile $file, string $directory = 'uploads'): string
     {
-        $filename = 'thinkcore_'.uniqid().'.'.$file->getClientOriginalExtension();
-
-        $file->move(public_path($directory), $filename);
-        return '/'.$directory.'/'.$filename;
+        try {
+            $filename = 'thinkcore_'.uniqid().'.'.$file->getClientOriginalExtension();
+            $file->storeAs($directory, $filename, 'public');
+            return '/'.$directory.'/'.$filename;
+        } catch (\Exception $e) {
+            // Handle the exception as needed, e.g., log it or rethrow it
+            throw new \RuntimeException('File upload failed: '.$e->getMessage());
+        }
     }
 
     public function deleteFile(string $filePath): Bool

@@ -148,6 +148,8 @@
 <!--main/custom js-->
 <script src="{{ asset('frontend/assets/js/main.js') }}"></script>
 
+@stack('scripts')
+
 </body>
 
 </html>

@@ -31,7 +31,15 @@
                                     Profile
                                 </a>
                             </li>
-
+                            <li>
+                                <a href="{{ route('instructor.courses') }}" class="{{ (isset($active) && $active == 'courses') ? 'active' : '' }}">
+                                    <div class="img">
+                                        <img src="{{ asset('frontend/assets/images/dash_icon_2.png') }}" alt="icon"
+                                            class="img-fluid w-100">
+                                    </div>
+                                    Courses
+                                </a>
+                            </li>
                             <li>
                                 <a href="{{ route('logout') }}"
                                     onclick="event.preventDefault(); document.getElementById('logout-form').submit();">

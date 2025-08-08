@@ -17,7 +17,8 @@ class InstructorRequestController extends Controller
     public function index()
     {
         $instructorRequests = User::where('approved_status', 'pending')
-        ->orWhere('approved_status', 'rejected')->get();
+        ->orWhere('approved_status', 'rejected')
+        ->paginate(5);
         return view('admin.instructor-request.index', compact('instructorRequests'));
     }
 

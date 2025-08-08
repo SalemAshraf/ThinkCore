@@ -30,7 +30,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @forelse ($levels as $level )
+                                @forelse ($levels as $level)
                                     <tr>
                                         <td>{{ $level->name }}</td>
                                         <td>{{ $level->slug }}</td>
@@ -46,8 +46,8 @@
                                                         d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z" />
                                                     <path d="M16 5l3 3" />
                                                 </svg>Edit</a>
-                                            <form action="{{ route('admin.course-levels.destroy', $level->id) }}"
-                                                method="POST" style="display:inline;">
+                                            <form action="{{ route('admin.course-levels.destroy', $level->id) }}" method="POST"
+                                                style="display:inline;">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="btn btn-danger"><svg
@@ -64,13 +64,16 @@
                                             </form>
                                         </td>
                                     </tr>
-                                    @empty
+                                @empty
                                     <tr>
                                         <td colspan="5" class="text-center">No level data found.</td>
                                     </tr>
                                 @endforelse
                             </tbody>
                         </table>
+                    </div>
+                    <div class="mt-3">
+                        {{ $levels->links('pagination::bootstrap-5') }}
                     </div>
                 </div>
             </div>
