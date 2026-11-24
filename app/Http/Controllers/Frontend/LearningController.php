@@ -11,14 +11,26 @@ class LearningController extends Controller
 {
     public function catalog(Request $request)
     {
+        $filters = $request->validate(['category' => 'nullable|integer|min:1', 'level' => 'nullable|integer|min:1', 'language' => 'nullable|integer|min:1', 'free' => 'nullable|in:1', 'q' => 'nullable|string|max:120']);
+        $categories = DB::table('course_categories')->where('status', 1)->orderBy('name')->get(['id', 'name']);
+        $levels = DB::table('course_levels')->orderBy('name')->get(['id', 'name']);
+        $languages = DB::table('course_languages')->orderBy('name')->get(['id', 'name']);
         $query = Course::where('status', 'active')->where('is_approved', 'approved');
         $term = mb_substr(trim((string) $request->query('q', '')), 0, 120);
         if ($term !== '') {
             $query->where('title', 'like', '%'.addcslashes($term, '%_\\').'%');
         }
+        foreach (['category' => 'category_id', 'level' => 'course_level_id', 'language' => 'course_language_id'] as $key => $column) {
+            if (! empty($filters[$key])) {
+                $query->where($column, $filters[$key]);
+            }
+        }
+        if (! empty($filters['free'])) {
+            $query->where('price', 0)->whereNotNull('price');
+        }
         $courses = $query->latest()->paginate(12)->withQueryString();
 
-        return view('marketplace.catalog', compact('courses', 'term'));
+        return view('marketplace.catalog', compact('courses', 'term', 'filters', 'categories', 'levels', 'languages'));
     }
 
     public function show(Request $request, string $slug)
@@ -61,7 +73,22 @@ class LearningController extends Controller
         $enrolled = $this->enrolled($course, $request);
         abort_unless($lesson->is_preview || $enrolled || ($request->user()?->hasVerifiedEmail() && $request->user()?->id === $course->instructor_id), 403);
 
-        return view('marketplace.lesson', compact('course', 'lesson', 'enrolled'));
+        $ordered = $this->orderedLessons($course->id);
+        $offset = $ordered->search(fn ($item) => $item->id === $lesson->id);
+        $mayReadAll = $enrolled || ($request->user()?->hasVerifiedEmail() && $request->user()?->id === $course->instructor_id);
+        $previous = $offset > 0 ? $ordered[$offset - 1] : null;
+        $next = $offset < $ordered->count() - 1 ? $ordered[$offset + 1] : null;
+        if (! $mayReadAll) {
+            if ($previous && ! $previous->is_preview) {
+                $previous = null;
+            }
+            if ($next && ! $next->is_preview) {
+                $next = null;
+            }
+        }
+        $completed = $enrolled && DB::table('lesson_completions')->where('user_id', $request->user()->id)->where('course_lesson_id', $lesson->id)->exists();
+
+        return view('marketplace.lesson', compact('course', 'lesson', 'enrolled', 'previous', 'next', 'completed'));
     }
 
     public function complete(Request $request, string $slug, int $lesson)
@@ -79,11 +106,25 @@ class LearningController extends Controller
         $courses = Course::whereIn('id', DB::table('course_enrollments')->where('user_id', $request->user()->id)->select('course_id'))->get();
         $progress = [];
         foreach ($courses as $course) {
-            $ids = DB::table('course_lessons')->where('course_id', $course->id)->pluck('id');
-            $progress[$course->id] = ['total' => $ids->count(), 'done' => DB::table('lesson_completions')->where('user_id', $request->user()->id)->whereIn('course_lesson_id', $ids)->count()];
+            $ordered = $this->orderedLessons($course->id);
+            $ids = $ordered->pluck('id');
+            $completedIds = DB::table('lesson_completions')->where('user_id', $request->user()->id)->whereIn('course_lesson_id', $ids)->pluck('course_lesson_id');
+            $resume = $ordered->first(fn ($item) => ! $completedIds->contains($item->id));
+            $progress[$course->id] = ['total' => $ids->count(), 'done' => $completedIds->count(), 'resume' => $resume?->id];
         }
 
         return view('marketplace.library', compact('courses', 'progress'));
+    }
+
+    private function orderedLessons(int $courseId)
+    {
+        return DB::table('course_lessons as l')
+            ->leftJoin('course_sections as s', function ($join) {
+                $join->on('s.id', '=', 'l.section_id')->on('s.course_id', '=', 'l.course_id');
+            })->where('l.course_id', $courseId)
+            ->orderByRaw('CASE WHEN s.id IS NULL THEN 1 ELSE 0 END')
+            ->orderBy('s.position')->orderBy('s.id')->orderBy('l.position')->orderBy('l.id')
+            ->get(['l.id', 'l.title', 'l.is_preview']);
     }
 
     private function published(string $slug): Course

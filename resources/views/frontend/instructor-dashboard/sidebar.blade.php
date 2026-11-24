@@ -12,7 +12,7 @@
                             <h4>{{ Auth::user()->name }}</h4>
                             <p>{{ Auth::user()->role }}</p>
                         </div>
-                        <ul class="wsus__dashboard_sidebar_menu">
+                        <ul class="wsus__dashboard_sidebar_menu"><li><a href="{{ route('marketplace.catalog') }}">استكشف الكورسات</a></li><li><a href="{{ route('marketplace.library') }}">تعلّمي</a></li>
                             <li>
                                 <a href="{{ route('instructor.dashboard') }}" class="{{ (isset($active) && $active == 'dashboard') ? 'active' : '' }}">
                                     <div class="img">
