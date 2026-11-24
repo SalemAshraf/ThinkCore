@@ -50,8 +50,8 @@ class RegisteredUserController extends Controller
                 'approved_status' => 'approved',
             ]);
         } elseif ($request->type === 'instructor') {
-            $request->validate(['document' => ['required', 'file', 'max:10000']]);
-            $filepath = $this->uploadFile($request->file('document'));
+            $request->validate(['document' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:10000']]);
+            $filepath = $request->file('document')->store('instructor-documents', 'local');
             $user = User::create([
                 'name' => $request->name,
                 'email' => $request->email,

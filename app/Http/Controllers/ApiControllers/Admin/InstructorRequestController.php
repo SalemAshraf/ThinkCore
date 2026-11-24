@@ -7,6 +7,7 @@ use App\Mail\InstructorRequestApprovalMail;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 
 class InstructorRequestController extends Controller
 {
@@ -20,7 +21,7 @@ class InstructorRequestController extends Controller
 
         return response()->json([
             'success' => true,
-            'data'    => $instructorRequests
+            'data' => $instructorRequests,
         ], 200);
     }
 
@@ -29,14 +30,9 @@ class InstructorRequestController extends Controller
      */
     public function download(User $user)
     {
-        if (!$user->document || !file_exists(public_path($user->document))) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Document not found.'
-            ], 404);
-        }
+        abort_unless($user->document && str_starts_with($user->document, 'instructor-documents/') && ! str_contains($user->document, '..'), 404);
 
-        return response()->download(public_path($user->document));
+        return Storage::disk('local')->download($user->document);
     }
 
     /**
@@ -62,7 +58,7 @@ class InstructorRequestController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Instructor request status updated successfully.',
-            'data'    => $instructors_request
+            'data' => $instructors_request,
         ], 200);
     }
 }
