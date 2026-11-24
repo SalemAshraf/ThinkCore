@@ -80,6 +80,8 @@ class CourseController extends Controller
         $course->category_id = $data['category'] ?? null;
         $course->course_level_id = $data['level'] ?? null;
         $course->course_language_id = $data['language'] ?? null;
+        $course->status = 'draft';
+        $course->is_approved = 'pending';
         $course->save();
 
         return response()->json(['status' => 'Done', 'redirect' => route('instructor.courses')]);
@@ -107,6 +109,8 @@ class CourseController extends Controller
         }
         $course->demo_video = $request->input('demo_video') ?: null;
         $course->demo_video_source = $request->input('demo_video_source') ?: $request->input('url');
+        $course->status = 'draft';
+        $course->is_approved = 'pending';
         $course->save();
     }
 

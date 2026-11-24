@@ -1,8 +1,11 @@
 <?php
 
+use App\Http\Controllers\Admin\CourseReviewController;
 use App\Http\Controllers\Frontend\CourseController;
+use App\Http\Controllers\Frontend\CurriculumController;
 use App\Http\Controllers\Frontend\FrontendController;
 use App\Http\Controllers\Frontend\InstructorDashboardController;
+use App\Http\Controllers\Frontend\LearningController;
 use App\Http\Controllers\Frontend\ProfileController;
 use App\Http\Controllers\Frontend\UserDashboardController;
 use Illuminate\Http\Request;
@@ -67,3 +70,23 @@ Route::middleware('auth:web')->group(function () {
 
 require __DIR__.'/auth.php';
 require __DIR__.'/admin.php';
+
+Route::get('/courses', [LearningController::class, 'catalog'])->name('marketplace.catalog');
+Route::get('/courses/{slug}', [LearningController::class, 'show'])->name('marketplace.course');
+Route::get('/courses/{slug}/lessons/{lesson}', [LearningController::class, 'lesson'])->name('marketplace.lesson');
+Route::middleware(['auth:web', 'verified'])->group(function () {
+    Route::post('/courses/{slug}/enroll', [LearningController::class, 'enroll'])->name('marketplace.enroll');
+    Route::post('/courses/{slug}/lessons/{lesson}/complete', [LearningController::class, 'complete'])->name('marketplace.complete');
+    Route::get('/my-learning', [LearningController::class, 'library'])->name('marketplace.library');
+});
+Route::middleware(['auth:web', 'verified', 'check_role:instructor'])->prefix('instructor/courses/{course}')->group(function () {
+    Route::get('/curriculum', [CurriculumController::class, 'index'])->name('instructor.curriculum');
+    Route::patch('/lessons/{lesson}', [CurriculumController::class, 'update'])->name('instructor.lessons.update');
+    Route::delete('/lessons/{lesson}', [CurriculumController::class, 'destroy'])->name('instructor.lessons.destroy');
+    Route::post('/lessons', [CurriculumController::class, 'store'])->name('instructor.lessons.store');
+    Route::post('/submit', [CurriculumController::class, 'submit'])->name('instructor.course.submit');
+});
+Route::middleware('auth:admin')->prefix('admin')->group(function () {
+    Route::get('/course-reviews', [CourseReviewController::class, 'index'])->name('admin.course-reviews');
+    Route::post('/course-reviews/{course}', [CourseReviewController::class, 'update'])->name('admin.course-reviews.update');
+});

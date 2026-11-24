@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>@yield('title', 'ThinkCore | تعلّم خطوة بخطوة')</title>
+<style>
+:root{--ink:#172c3c;--muted:#617483;--line:#dce5e9;--brand:#087f79;--bg:#f4f7f8}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.8 Tahoma,Arial,sans-serif}a{color:var(--brand);text-decoration:none}header{background:white;border-bottom:1px solid var(--line)}nav{max-width:1160px;margin:auto;display:flex;gap:26px;align-items:center;padding:20px 24px;flex-wrap:wrap}.logo{font:700 25px Arial;letter-spacing:-1px;color:var(--ink);margin-inline-end:auto}.logo span{color:var(--brand)}main{max-width:1160px;margin:44px auto;padding:0 24px}h1{font-size:clamp(28px,4vw,44px);line-height:1.4;margin:10px 0 14px}h2{font-size:23px;margin:0 0 16px}p{margin:0 0 16px}.muted,small{color:var(--muted)}.eyebrow{color:var(--brand);font-size:14px;font-weight:bold}.hero{padding:32px 0 38px;max-width:820px}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px}.card,.panel{background:white;border:1px solid var(--line);border-radius:16px;padding:26px}.card{display:flex;flex-direction:column;gap:12px}.card h2{font-size:21px;margin:0}.card .button{margin-top:auto}.badge{display:inline-block;width:max-content;font-size:12px;padding:3px 10px;border-radius:20px;background:#e6f4ef;color:#17644c}.button,button{display:inline-block;background:var(--brand);color:white;border:0;border-radius:8px;padding:11px 20px;cursor:pointer;font:inherit;text-align:center}.secondary{background:#e9eff2;color:var(--ink)}input,textarea{font:inherit;padding:12px;border:1px solid #c7d5dc;border-radius:8px;width:100%;background:white}label{display:block;margin:16px 0 7px}input[type=checkbox]{width:auto}.search{display:flex;gap:10px;max-width:680px;margin-top:24px}.row{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap}.stack{display:grid;gap:16px}.notice{border-right:4px solid var(--brand);background:#e8f5f2;padding:14px 20px;border-radius:8px;margin-bottom:24px}.error{background:#fff0ed;padding:16px;margin-bottom:20px}.lesson{white-space:pre-wrap;overflow-wrap:anywhere;line-height:2.1}.split{display:grid;grid-template-columns:minmax(0,2fr) minmax(240px,1fr);gap:28px}.price{font-size:24px;font-weight:bold}.empty{padding:50px 24px;border:1px dashed #bacbd3;border-radius:14px;text-align:center;background:white}.divider{border:0;border-top:1px solid var(--line);margin:20px 0}footer{max-width:1160px;margin:70px auto 25px;padding:0 24px;font-size:13px;color:var(--muted)}@media(max-width:760px){.grid,.split{grid-template-columns:1fr}nav{gap:15px;padding:18px}.logo{width:100%}main{margin-top:24px;padding:0 18px}.hero{padding-top:16px}.panel,.card{padding:20px}.search{flex-direction:column}.button{max-width:100%}}
+</style>
+</head>
+<body>
+<header><nav><a class="logo" href="{{ route('marketplace.catalog') }}">Think<span>Core</span></a><a href="{{ route('marketplace.catalog') }}">استكشف الكورسات</a>@auth<a href="{{ route('marketplace.library') }}">تعلّمي</a><a href="{{ route('dashboard') }}">حسابي</a>@else<a href="{{ route('login') }}">تسجيل الدخول</a><a href="{{ route('register') }}">حساب جديد</a>@endauth</nav></header>
+<main>
+@if(session('status'))<div class="notice">{{ session('status') }}</div>@endif
+@if($errors->any())<div class="error">@foreach($errors->all() as $error)<div>{{ $error }}</div>@endforeach</div>@endif
+@yield('content')
+</main>
+<footer>ThinkCore · نسخة تطوير. الدفع والمحتوى المدفوع غير متاحين بعد.</footer>
+</body></html>

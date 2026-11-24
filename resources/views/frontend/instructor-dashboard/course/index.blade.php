@@ -103,6 +103,7 @@
                                                         @endif
                                                     </td>
                                                     <td class="action">
+<a href="{{ route('instructor.curriculum', $course->id) }}">Lessons</a>
                                                         <a class="edit" href="{{ route('instructor.courses.edit', ['id'=>$course->id , 'step' => 1]) }}"><i class="far fa-edit"></i></a>
 
                                                     </td>

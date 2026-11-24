@@ -1,0 +1,5 @@
+@extends('marketplace.layout')
+@section('content')
+<section class="hero"><a href="{{ route('marketplace.catalog') }}">العودة للكورسات</a><h1>{{ $course->title }}</h1></section>
+<div class="split"><section class="panel"><h2>عن الكورس</h2><p class="lesson">{{ strip_tags($course->description) }}</p><hr class="divider"><h2>محتوى الكورس</h2><div class="stack">@forelse($lessons as $lesson)<a class="row" href="{{ route('marketplace.lesson', [$course->slug, $lesson->id]) }}"><span>{{ $lesson->title }}</span><small>{{ $lesson->is_preview ? 'معاينة مجانية' : 'للمشتركين' }}</small></a>@empty<p class="muted">لا توجد دروس بعد.</p>@endforelse</div></section><aside class="panel"><div class="price">{{ $course->price !== null && (float)$course->price === 0.0 ? 'كورس مجاني' : 'الاشتراك المدفوع غير متاح بعد' }}</div><p class="muted">{{ $lessons->count() }} درس</p>@if($course->price !== null && (float)$course->price === 0.0)@auth<form method="post" action="{{ route('marketplace.enroll', $course->slug) }}">@csrf<button>انضم للكورس مجانًا</button></form>@else<a class="button" href="{{ route('login') }}">سجّل دخولك للانضمام</a>@endauth @endif</aside></div>
+@endsection
