@@ -58,7 +58,7 @@ test('decision and outbox insert are atomic if persistence fails', function () {
     Mail::fake();Storage::fake('local');Storage::disk('local')->put('instructor-documents/atomic.pdf','fictional');
     $user=User::factory()->create(['role'=>'student','approved_status'=>'pending','document'=>'instructor-documents/atomic.pdf']);
     $fail=true;
-    DB::listen(function($query) use (&$fail) {if($fail && str_starts_with(strtolower($query->sql),'insert into "instructor_decision_notifications"')) { $fail=false;throw new RuntimeException('Injected outbox write failure'); }});
+    DB::listen(function($query) use (&$fail) {if($fail && str_starts_with(strtolower($query->sql),'insert into ') && str_contains($query->sql,'instructor_decision_notifications')) { $fail=false;throw new RuntimeException('Injected outbox write failure'); }});
     try {$this->actingAs(taxonomyAdmin(),'admin')->put('/admin/instructors-requests/'.$user->id,['status'=>'approved','snapshot'=>InstructorReviewSnapshot::token($user)])->assertServerError();} finally {$fail=false;}
     expect($user->fresh()->role)->toBe('student');expect($user->fresh()->approved_status)->toBe('pending');expect(DB::table('instructor_decision_notifications')->count())->toBe(0);Mail::assertNothingSent();
 });

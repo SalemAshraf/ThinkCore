@@ -35,3 +35,8 @@ cd "$APP_DIR"
 "$PHP_BIN" artisan migrate --force
 "$PHP_BIN" "$APP_DIR/tests/Concurrency/taxonomy.php"
 "$PHP_BIN" "$APP_DIR/tests/Concurrency/outbox.php"
+if [ "${RUN_FEATURE_SUITE:-0}" = 1 ]; then
+ export DB_DATABASE=thinkcore_fictional_features APP_ENV=testing
+ "$PHP_BIN" -r '$p=new PDO("mysql:unix_socket=".getenv("DB_SOCKET"),"root","");$p->exec("CREATE DATABASE IF NOT EXISTS thinkcore_fictional_features");'
+ "$PHP_BIN" artisan test
+fi
