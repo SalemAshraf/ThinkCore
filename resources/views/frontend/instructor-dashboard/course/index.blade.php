@@ -70,7 +70,7 @@
 
                                                     </th>
                                                     <th class="sale">
-                                                        STUDENT
+                                                        PRICE
                                                     </th>
                                                     <th class="status">
                                                         STATUS
@@ -88,14 +88,7 @@
                                                         </div>
                                                     </td>
                                                     <td class="details">
-                                                        <p class="rating">
-                                                            <i class="fas fa-star" aria-hidden="true"></i>
-                                                            <i class="fas fa-star" aria-hidden="true"></i>
-                                                            <i class="fas fa-star" aria-hidden="true"></i>
-                                                            <i class="fas fa-star-half-alt" aria-hidden="true"></i>
-                                                            <i class="far fa-star" aria-hidden="true"></i>
-                                                            <span>(5.0)</span>
-                                                        </p>
+
                                                         <a class="title" href="#">{{ $course->title }}</a>
 
                                                     </td>
@@ -111,7 +104,7 @@
                                                     </td>
                                                     <td class="action">
                                                         <a class="edit" href="{{ route('instructor.courses.edit', ['id'=>$course->id , 'step' => 1]) }}"><i class="far fa-edit"></i></a>
-                                                        <a class="del" href="#"><i class="fas fa-trash-alt"></i></a>
+
                                                     </td>
                                                 </tr>
                                                 @endforeach

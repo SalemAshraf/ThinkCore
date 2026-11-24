@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 
 class InstructorRequestController extends Controller
 {
@@ -17,14 +18,17 @@ class InstructorRequestController extends Controller
     public function index()
     {
         $instructorRequests = User::where('approved_status', 'pending')
-        ->orWhere('approved_status', 'rejected')
-        ->paginate(5);
+            ->orWhere('approved_status', 'rejected')
+            ->paginate(5);
+
         return view('admin.instructor-request.index', compact('instructorRequests'));
     }
 
     public function download(User $user)
     {
-        return response()->download(public_path( $user->document));
+        abort_unless($user->document && str_starts_with($user->document, 'instructor-documents/') && ! str_contains($user->document, '..'), 404);
+
+        return Storage::disk('local')->download($user->document);
     }
 
     /**
@@ -62,18 +66,18 @@ class InstructorRequestController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, User $instructors_request):RedirectResponse
+    public function update(Request $request, User $instructors_request): RedirectResponse
     {
         $request->validate([
             'status' => 'required|in:pending,approved,rejected',
         ]);
         $instructors_request->approved_status = $request->input('status');
-        $request->status == 'approved' ? $instructors_request->role = 'instructor' : 'student';
+        $instructors_request->role = $request->status === 'approved' ? 'instructor' : 'student';
         $instructors_request->save();
 
-        if(config('mail_queue.is_queue')) {
+        if (config('mail_queue.is_queue')) {
             Mail::to($instructors_request->email)->queue(new InstructorRequestApprovalMail($instructors_request));
-        }else {
+        } else {
             Mail::to($instructors_request->email)->send(new InstructorRequestApprovalMail($instructors_request));
         }
 

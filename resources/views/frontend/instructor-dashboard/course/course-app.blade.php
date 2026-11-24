@@ -37,24 +37,20 @@
                         <div class="wsus__dashboard_contant_top">
                             <div class="wsus__dashboard_heading relative">
                                 <h5>Add Courses</h5>
-                                <p>Manage your courses and its update like live, draft and insight.</p>
+                                <p>Save your course draft. Lessons, review and publishing are not available yet.</p>
                             </div>
                         </div>
 
                         <div class="dashboard_add_courses">
                             <ul class="nav nav-pills" id="pills-tab" role="tablist">
                                 <li class="nav-item" role="presentation">
-                                    <a class="nav-link course-tab {{ request('step') == 1 ? 'active' : 'active' }}" data-step="1" href="#">Basic Infos</a>
+                                    <a class="nav-link course-tab {{ request('step', 1) == 1 ? 'active' : '' }}" data-step="1" href="#">Basic Infos</a>
                                 </li>
                                 <li class="nav-item" role="presentation">
                                     <a class="nav-link course-tab {{ request('step') == 2 ? 'active' : '' }}" data-step="2" href="#">More Infos</a>
                                 </li>
-                                <li class="nav-item" role="presentation">
-                                    <a class="nav-link course-tab {{ request('step') == 3 ? 'active' : '' }}" data-step="3" href="#">Course Contents</a>
-                                </li>
-                                <li class="nav-item" role="presentation">
-                                    <a class="nav-link course-tab {{ request('step') == 4 ? 'active' : '' }}" data-step="4" href="#">Finish</a>
-                                </li>
+
+
                             </ul>
                             <div class="tab-content" id="pills-tabContent">
                                 @yield('course-content')

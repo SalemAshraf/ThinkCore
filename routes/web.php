@@ -5,8 +5,8 @@ use App\Http\Controllers\Frontend\FrontendController;
 use App\Http\Controllers\Frontend\InstructorDashboardController;
 use App\Http\Controllers\Frontend\ProfileController;
 use App\Http\Controllers\Frontend\UserDashboardController;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-
 
 /**
  * ----------------------
@@ -50,14 +50,20 @@ Route::group(['middleware' => ['auth:web', 'verified', 'check_role:instructor'],
     Route::get('/courses/{id}/edit', [CourseController::class, 'edit'])->name('courses.edit');
     Route::post('/courses/moreinfo', [CourseController::class, 'moreinfo'])->name('courses.moreinfo');
 
-    Route::group(['prefix' => 'laravel-filemanager', 'middleware' => ['web', 'auth']], function () {
-        \UniSharp\LaravelFilemanager\Lfm::routes();
-    });
+    // Public file manager disabled until media ownership and private delivery are implemented.
+
 });
 
+// Shared authentication callbacks need a stable, role-aware destination.
+Route::get('/dashboard', function (Request $request) {
+    return redirect()->route($request->user()->role === 'instructor' ? 'instructor.dashboard' : 'student.dashboard');
+})->middleware(['auth:web', 'verified'])->name('dashboard');
 
+Route::middleware('auth:web')->group(function () {
+    Route::get('/profile', [App\Http\Controllers\ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [App\Http\Controllers\ProfileController::class, 'destroy'])->name('profile.destroy');
+});
 
-
-
-require __DIR__ . '/auth.php';
-require __DIR__ . '/admin.php';
+require __DIR__.'/auth.php';
+require __DIR__.'/admin.php';

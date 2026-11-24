@@ -9,20 +9,21 @@ use App\Models\CourseCategory;
 use App\Models\CourseLanguage;
 use App\Models\CourseLevel;
 use App\Traits\FileUpload;
-use Illuminate\Support\Str;
-
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class CourseController extends Controller
 {
     use FileUpload;
-    public function index()
+
+    public function index(Request $request)
     {
-        $courses = Course::all();
+        $courses = Course::where('instructor_id', $request->user()->id)->latest()->get();
+
         return view('frontend.instructor-dashboard.course.index', compact('courses'));
     }
+
     public function createCourse()
     {
         return view('frontend.instructor-dashboard.course.create');
@@ -30,119 +31,87 @@ class CourseController extends Controller
 
     public function storeBasicInfo(CourseBasicInfoCreateRequest $request)
     {
-        $imagepath = null;
-        if ($request->hasFile('thumbnail')) {
-            $imagepath = $this->uploadFile($request->file('thumbnail'), 'thumbnail');
-        }
-        $course = new Course();
-        $course->title = $request->title;
-        $course->price = $request->price;
-        $course->discount = $request->discount;
-        $course->slug = Str::slug($request->title);
-        $course->seo_description = $request->seo_description;
-        $course->description = $request->description;
-        $course->thumbnail = $imagepath;
-        $course->demo_video = $request->demo_video;
-        $course->demo_video_source = $request->demo_video_source;
-        $course->instructor_id = Auth::guard('web')->user()->id;
+        $course = new Course;
+        $course->instructor_id = $request->user()->id;
+        $this->saveBasicInfo($request, $course);
 
-        $course->save();
-
-        Session::put('course_create_id', $course->id);
-        return response([
-            'status' => 'Done',
-            'redirect' => route('instructor.courses.edit', ['id' => $course->id, 'step' => $request->next_step])
-        ]);
+        return $this->nextStep($course, 2);
     }
 
     public function edit(Request $request)
     {
-
-        switch ($request->step) {
-            case '1':
-                $course = Course::findOrFail($request->id);
-                return view('frontend.instructor-dashboard.course.edit', compact('course'));
-                break;
-            case '2':
-                $categories = CourseCategory::where('status', 1)->get();
-                $levels = CourseLevel::query()->get();
-                $Languages = CourseLanguage::query()->get();
-                $course = Course::findOrFail($request->id);
-                return view('frontend.instructor-dashboard.course.moreinfo', compact('categories', 'levels', 'Languages', 'course'));
-                break;
-            default:
-                break;
+        $course = $this->ownedCourse($request);
+        $step = (int) $request->input('step', 1);
+        abort_unless(in_array($step, [1, 2], true), 404);
+        if ($step === 1) {
+            return view('frontend.instructor-dashboard.course.edit', compact('course'));
         }
+        $categories = CourseCategory::with('subCategories')->where('status', 1)->get();
+        $levels = CourseLevel::all();
+        $Languages = CourseLanguage::all();
+
+        return view('frontend.instructor-dashboard.course.moreinfo', compact('categories', 'levels', 'Languages', 'course'));
     }
 
     public function moreinfo(Request $request)
     {
-        switch ($request->current_step) {
-            case '1':
-                $rules = [
-                    'title' => 'required|string|max:255',
-                    'description' => 'required|string',
-                    'demo_video' => 'nullable|in:upload,youtube, vimeo,link|string',
-                    'demo_video_source' => 'nullable',
-                    'thumbnail' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-                    'price' => 'required|numeric|min:0',
-                    'discount' => 'required|numeric|min:0',
-                    'seo_description' => 'nullable|string|max:500',
-                ];
-                $request->validate($rules);
-                $course = Course::findOrFail($request->id);
-                $imagepath = null;
-                if ($request->hasFile('thumbnail')) {
-                    $imagepath = $this->uploadFile($request->file('thumbnail'), 'thumbnail');
-                    $this->deleteFile($course->thumbnail);
-                    $course->thumbnail = $imagepath;
-                }
-                $course->title = $request->title;
-                $course->price = $request->price;
-                $course->discount = $request->discount;
-                $course->slug = Str::slug($request->title);
-                $course->seo_description = $request->seo_description;
-                $course->description = $request->description;
-                $course->demo_video = $request->demo_video;
-                $course->demo_video_source = $request->filled('file') ? $request->file : $request->url;
-                $course->instructor_id = Auth::guard('web')->user()->id;
+        // Resolve ownership before validation or file operations. Foreign IDs are never exposed.
+        $course = $this->ownedCourse($request);
+        $request->validate(['current_step' => ['required', Rule::in([1, 2])]]);
+        if ((int) $request->current_step === 1) {
+            $request->validate((new CourseBasicInfoCreateRequest)->rules());
+            $this->saveBasicInfo($request, $course);
 
-                $course->save();
-
-                Session::put('course_create_id', $course->id);
-                return response([
-                    'status' => 'Done',
-                    'redirect' => route('instructor.courses.edit', ['id' => $course->id, 'step' => $request->next_step])
-                ]);
-                break;
-            case '2':
-                $request->validate(
-                    [
-                        'capacity' => ['nullable', 'numeric'],
-                        'duration' => ['nullable', 'numeric'],
-                        'qna' => ['nullable', 'boolean'],
-                        'certificate' => ['nullable', 'boolean'],
-                        'category_id' => ['nullable', 'integer'],
-                        'course_level_id' => ['nullable', 'integer'],
-                        'course_language_id' => ['nullable', 'integer'],
-                    ]
-                );
-                $course = Course::findOrFail($request->id);
-                $course->capacity = $request->capacity;
-                $course->duration = $request->duration;
-                $course->qna = $request->qna ? 1 : 0;
-                $course->certificate = $request->certificate ? 1 : 0;
-                $course->category_id = $request->category;
-                $course->course_level_id = $request->level;
-                $course->course_language_id = $request->language;
-                $course->save();
-                return response([
-                    'status' => 'Done',
-                    'redirect' => route('instructor.courses.edit', ['id' => $course->id, 'step' => $request->next_step])
-                ]);
-                break;
-            default:
-                break;
+            return $this->nextStep($course, 2);
         }
+        $data = $request->validate([
+            'capacity' => ['nullable', 'integer', 'min:1'],
+            'duration' => ['nullable', 'integer', 'min:1'],
+            'qna' => ['nullable', 'boolean'],
+            'certificate' => ['nullable', 'boolean'],
+            'category' => ['nullable', 'integer', Rule::exists('course_categories', 'id')->where('status', 1)],
+            'level' => ['nullable', 'integer', 'exists:course_levels,id'],
+            'language' => ['nullable', 'integer', 'exists:course_languages,id'],
+        ]);
+        $course->capacity = $data['capacity'] ?? null;
+        $course->duration = $data['duration'] ?? null;
+        $course->qna = $request->boolean('qna');
+        $course->certificate = $request->boolean('certificate');
+        $course->category_id = $data['category'] ?? null;
+        $course->course_level_id = $data['level'] ?? null;
+        $course->course_language_id = $data['language'] ?? null;
+        $course->save();
+
+        return response()->json(['status' => 'Done', 'redirect' => route('instructor.courses')]);
+    }
+
+    private function ownedCourse(Request $request): Course
+    {
+        return Course::where('instructor_id', $request->user()->id)->findOrFail($request->route('id') ?? $request->input('id'));
+    }
+
+    private function saveBasicInfo(Request $request, Course $course): void
+    {
+        foreach (['title', 'price', 'discount', 'seo_description', 'description'] as $field) {
+            $course->$field = $request->input($field);
+        }
+        $course->discount = $request->input('discount') ?? 0;
+        // Keep URLs stable on edit and support non-Latin and duplicate course titles.
+        if (! $course->exists) {
+            $course->slug = (Str::slug($request->title) ?: 'course').'-'.Str::lower(Str::random(12));
+        }
+        if ($request->hasFile('thumbnail')) {
+            $old = $course->thumbnail;
+            $course->thumbnail = $this->uploadFile($request->file('thumbnail'), 'thumbnail');
+            $this->deleteFile($old);
+        }
+        $course->demo_video = $request->input('demo_video') ?: null;
+        $course->demo_video_source = $request->input('demo_video_source') ?: $request->input('url');
+        $course->save();
+    }
+
+    private function nextStep(Course $course, int $step)
+    {
+        return response()->json(['status' => 'Done', 'redirect' => route('instructor.courses.edit', ['id' => $course->id, 'step' => $step])]);
     }
 }

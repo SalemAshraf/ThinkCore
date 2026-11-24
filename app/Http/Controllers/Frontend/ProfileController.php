@@ -9,20 +9,19 @@ use App\Http\Requests\Frontend\SocialUpdateRequest;
 use App\Models\User;
 use App\Traits\FileUpload;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Auth\Passwords\Password;
-
 
 class ProfileController extends Controller
 {
     use FileUpload;
+
     public function index()
     {
         // Logic to display the user's profile
-        return view('frontend.student-Dashboard.profile.index');
+        return view('frontend.student-dashboard.profile.index');
     }
+
     public function instructorIndex()
     {
         // Logic to display the user's profile
@@ -32,12 +31,15 @@ class ProfileController extends Controller
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
         $user = User::find(Auth::id());
-        if($request->hasFile('avatar')) {
+        if ($request->hasFile('avatar')) {
             $avatarPath = $this->uploadFile($request->file('avatar'), 'avatars');
             $this->deleteFile($user->image);
             $user->image = $avatarPath;
         }
         $user->name = $request->name;
+        if ($user->email !== $request->email) {
+            $user->email_verified_at = null;
+        }
         $user->email = $request->email;
         $user->headline = $request->headline;
         $user->gender = $request->gender;
@@ -48,6 +50,7 @@ class ProfileController extends Controller
 
         return redirect()->back();
     }
+
     public function updatePassword(PasswordUpdateRequest $request)
     {
         $request->validate([
@@ -57,11 +60,11 @@ class ProfileController extends Controller
 
         $user = User::find(Auth::id());
 
-        if (!$user) {
+        if (! $user) {
             return back()->withErrors(['user' => 'User not found.']);
         }
 
-        if (!Hash::check($request->current_password, (string) $user->password)) {
+        if (! Hash::check($request->current_password, (string) $user->password)) {
             return back()->withErrors(['current_password' => 'Current password is incorrect.']);
         }
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Auth;
+namespace App\Http\Controllers\ApiControllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
@@ -30,11 +30,14 @@ class AuthenticatedSessionController extends Controller
 
         if ($request->user()->role == 'student') {
             noty()->layout('bottomCenter')->success('Login successful. Welcome back!');
+
             return redirect()->intended(route('student.dashboard', absolute: false));
-        } else if ($request->user()->role == 'instructor') {
+        } elseif ($request->user()->role == 'instructor') {
             noty()->layout('bottomCenter')->success('Login successful. Welcome back!');
+
             return redirect()->intended(route('instructor.dashboard', absolute: false));
         }
+
         return abort(404);
     }
 

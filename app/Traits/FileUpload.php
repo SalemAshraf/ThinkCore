@@ -3,7 +3,7 @@
 namespace App\Traits;
 
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Storage;
 
 trait FileUpload
 {
@@ -12,19 +12,24 @@ trait FileUpload
         try {
             $filename = 'thinkcore_'.uniqid().'.'.$file->getClientOriginalExtension();
             $file->storeAs($directory, $filename, 'public');
-            return '/'.$directory.'/'.$filename;
+
+            return '/storage/'.$directory.'/'.$filename;
         } catch (\Exception $e) {
             // Handle the exception as needed, e.g., log it or rethrow it
             throw new \RuntimeException('File upload failed: '.$e->getMessage());
         }
     }
 
-    public function deleteFile(string $filePath): Bool
+    public function deleteFile(?string $filePath): bool
     {
-        if (File::exists(public_path($filePath))) {
-            File::delete(public_path($filePath));
-            return true;
+        if (! $filePath || ! str_starts_with($filePath, '/storage/')) {
+            return false;
         }
-        return false;
+        $relative = substr($filePath, 9);
+        if (str_contains($relative, '..')) {
+            return false;
+        }
+
+        return Storage::disk('public')->delete($relative);
     }
 }

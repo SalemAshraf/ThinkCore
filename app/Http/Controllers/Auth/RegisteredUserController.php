@@ -13,12 +13,13 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rules;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class RegisteredUserController extends Controller
 {
-
     use FileUpload;
+
     /**
      * Display the registration view.
      */
@@ -30,7 +31,7 @@ class RegisteredUserController extends Controller
     /**
      * Handle an incoming registration request.
      *
-     * @throws \Illuminate\Validation\ValidationException
+     * @throws ValidationException
      */
     public function store(Request $request): RedirectResponse
     {
@@ -40,7 +41,7 @@ class RegisteredUserController extends Controller
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
-        if($request->type === 'student') {
+        if ($request->type === 'student') {
             $user = User::create([
                 'name' => $request->name,
                 'email' => $request->email,
@@ -48,9 +49,9 @@ class RegisteredUserController extends Controller
                 'role' => 'student',
                 'approved_status' => 'approved',
             ]);
-        }else if($request->type === 'instructor') {
-            $request->validate(['document' => ['required', 'file', 'max:10000']]);
-            $filepath = $this->uploadFile($request->file('document'));
+        } elseif ($request->type === 'instructor') {
+            $request->validate(['document' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:10000']]);
+            $filepath = $request->file('document')->store('instructor-documents', 'local');
             $user = User::create([
                 'name' => $request->name,
                 'email' => $request->email,
@@ -60,10 +61,9 @@ class RegisteredUserController extends Controller
                 'document' => $filepath,
             ]);
             Mail::to($user->email)->queue(new InstructorRequestApprovalMail($user));
-        }else{
+        } else {
             abort(403, 'Unauthorized action.');
         }
-
 
         event(new Registered($user));
 

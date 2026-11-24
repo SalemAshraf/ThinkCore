@@ -33,36 +33,20 @@
                             <label for="#">Demo Video Storage <b>(optional)</b></label>
                             <select class="form-select storage" style="padding: 12px 20px;" name="demo_video">
                                 <option value=""> Please Select </option>
-                                <option value="upload" {{ old('demo_video', $course->demo_video ?? '') == 'upload' ? 'selected' : '' }}> Upload </option>
+
                                 <option value="youtube" {{ old('demo_video', $course->demo_video ?? '') == 'youtube' ? 'selected' : '' }}> Youtube </option>
                                 <option value="vimeo" {{ old('demo_video', $course->demo_video ?? '') == 'vimeo' ? 'selected' : '' }}> Vimeo </option>
-                                <option value="external_link" {{ old('demo_video', $course->demo_video ?? '') == 'external_link' ? 'selected' : '' }}> External Link </option>
+                                <option value="link" {{ old('demo_video', $course->demo_video ?? '') == 'link' ? 'selected' : '' }}> External Link </option>
                             </select>
                         </div>
                     </div>
 
                     <div class="col-xl-6">
-                        <div
-                            class="add_course_basic_info_imput upload_source {{ old('demo_video', $course->demo_video ?? '') == 'upload' ? '' : 'd-none' }}">
-                            <label for="#">Path</label>
-                            <div class="input-group">
-                                <span class="input-group-btn">
-                                    <a id="lfm" data-input="thumbnail" data-preview="holder" class="btn btn-primary">
-                                        <i class="fa fa-picture-o"></i> Choose
-                                    </a>
-                                </span>
-                                <input id="thumbnail" class="form-control source_input" type="text" name="file"
-                                    value="{{ old('file', $course->demo_video_source ?? '') }}">
-                            </div>
-                        </div>
-
-                        <div
-                            class="add_course_basic_info_imput external_source {{ in_array(old('demo_video', $course->demo_video ?? ''), ['youtube', 'vimeo', 'external_link']) ? '' : 'd-none' }}">
-                            <label for="#">Path</label>
-                            <input type="text" name="url" class="source_input" value="{{ old('url', $course->demo_video_source ?? '') }}">
+                        <div class="add_course_basic_info_imput">
+                            <label for="demo-url">Demo video URL (optional)</label>
+                            <input id="demo-url" type="url" name="demo_video_source" value="{{ old('demo_video_source', $course->demo_video_source ?? '') }}" placeholder="https://">
                         </div>
                     </div>
-
                     <div class="col-xl-6">
                         <div class="add_course_basic_info_imput">
                             <label for="#">Price *</label>

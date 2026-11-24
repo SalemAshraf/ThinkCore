@@ -1,61 +1,63 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# ThinkCore
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+ThinkCore is an independent course marketplace in progress, with student, instructor and administrator accounts. It is not the teacher-branded subscription platform.
 
-## About Laravel
+## Current milestone
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+The November 2026 maintenance pass updates compatible dependencies, repairs authentication and asset builds, and secures the existing course-draft workflow. It does **not** make the marketplace production-ready.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- Laravel 12.73.0, Sanctum 4.5.0, compatible PHP 8.2 dependency resolution.
+- Instructor course drafts are scoped to their owner for listing, reading and updates.
+- Draft details and metadata save with validated category, language, level and prices.
+- Arabic and duplicate titles work without colliding slugs. Editing preserves URLs.
+- New instructor-application documents use private storage and authenticated administrator downloads. Public file-manager routes are disabled until media isolation is implemented.
+- Email verification, profile callbacks, Linux view names, API controller namespaces and Vite entry points are repaired.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Local setup
 
-## Learning Laravel
+Use PHP 8.2+ with the normal Laravel extensions, Composer, Node 22.12+ and npm. The current lock targets PHP 8.2 compatibility. SQLite is sufficient for tests; verify MySQL separately before production.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+```sh
+composer install
+cp .env.example .env
+php artisan key:generate
+# Configure a local database and mail driver in .env first.
+php artisan migrate
+php artisan storage:link
+npm ci
+npm run build
+php artisan serve
+```
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+Do not use demo seeders or test accounts in production. Set `APP_DEBUG=false` on any shared environment. Never commit `.env`, keys, databases or customer uploads.
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Verification
 
-## Laravel Sponsors
+```sh
+php artisan test
+npm run build
+composer audit
+npm audit
+php artisan route:cache
+php artisan route:clear
+```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+The first maintenance milestone passed 32 automated tests with 92 assertions, a production asset build and route caching. Both dependency audits reported no known advisories at the check time. This is not a guarantee against undiscovered vulnerabilities. Browser checks cover login and the instructor draft form on desktop and mobile; the existing marketing template still needs content and design work.
 
-### Premium Partners
+## Remaining product work
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+1. Course curriculum: sections, ordered lessons, attachments, validation, instructor ownership and safe draft deletion.
+2. Administrator review and publishing, followed by a database-backed course catalog, search and public course details. Existing marketing sections contain template/sample content, not verified marketplace activity.
+3. Student enrollment, free-course access, lesson progress and protected delivery. Never accept a browser-supplied enrollment or price as authority.
+4. Payment-provider selection, signed idempotent webhooks, orders, refunds and instructor settlement. No real payments are implemented or authorized by this maintenance pass.
+5. Private video/attachment storage and entitlement checks. External demo links are public previews only. Do not promise screen-recording prevention.
+6. Reviews restricted to enrolled learners, moderation, notifications, queues and operational monitoring.
+7. Production readiness: backup/restore, MySQL tests, rate limits, file and API permissions, accessibility, responsive templates, privacy/terms and recovery flows.
 
-## Contributing
+## Upgrade and deployment notes
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Laravel 12 security support is listed through February 24, 2027: https://laravel.com/docs/12.x/releases . Plan the Laravel 13 migration separately using https://laravel.com/docs/13.x/upgrade . Current Debugbar, Tinker and Pest constraints need coordinated changes; do not just change the framework constraint or assume an unknown host has the required PHP version.
 
-## Code of Conduct
+No hosting or domain was declared in repository metadata during the audit. This pass does not deploy anything and makes no production-data migration.
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Before any deployment, privately audit legacy `users.document` values and files already in `public/uploads`. Old documents may be publicly served by the old code. New downloads intentionally do not serve legacy arbitrary paths. Make a verified backup, move only confirmed documents into private storage, update their records and remove public copies through a reviewed migration. Changing the storage root also requires preserving existing public asset paths. Never run a destructive migration to make a deployment pass.

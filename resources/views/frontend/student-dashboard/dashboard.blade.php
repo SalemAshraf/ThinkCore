@@ -31,7 +31,7 @@
     <section class="wsus__dashboard mt_90 xs_mt_70 pb_120 xs_pb_100">
         <div class="container">
             <div class="row">
-                @include('frontend.student-Dashboard.sidebar', ['active' => 'dashboard'])
+                @include('frontend.student-dashboard.sidebar', ['active' => 'dashboard'])
                 <div class="col-xl-9 col-md-8">
                     @if (Auth::user()->approved_status === 'pending')
 

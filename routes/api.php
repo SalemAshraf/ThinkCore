@@ -22,7 +22,7 @@ use Illuminate\Support\Facades\Route;
  * ===============================
  */
 Route::post('/login', [AuthenticatedSessionController::class, 'login'])
-    ->name('admin.login');
+    ->middleware('throttle:5,1')->name('admin.login');
 
 Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])
     ->name('password.request');
@@ -110,9 +110,8 @@ Route::post('reset-password', [NewPasswordController::class, 'store'])
 //     });
 // });
 
-
 Route::prefix('admin')->group(function () {
-    Route::post('/login', [AuthenticatedSessionController::class, 'login'])->name('api.admin.login');
+    Route::post('/login', [AuthenticatedSessionController::class, 'login'])->middleware('throttle:5,1')->name('api.admin.login');
     Route::middleware('auth:api_admin')->group(function () {
         Route::get('/course-languages', [CourseLanguageController::class, 'index']);
         // Admin-specific routes (e.g., manage courses, users)

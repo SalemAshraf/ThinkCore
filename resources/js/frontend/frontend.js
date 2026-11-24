@@ -1,4 +1,4 @@
-import './cart.js';
+// Cart checkout is not implemented yet; do not import a missing placeholder.
 
 const csrf_token = $(`meta[name="csrf_token"]`).attr('content');
 const base_url = $(`meta[name="base_url"]`).attr('content');
@@ -12,7 +12,7 @@ var notyf = new Notyf({
 
 /** Ez share init */
 document.addEventListener("DOMContentLoaded", function() {
-    ezShare.execute();
+    if (typeof ezShare !== 'undefined') ezShare.execute();
 });
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -21,7 +21,7 @@ document.addEventListener("DOMContentLoaded", function () {
         height: 500,
         menubar: false,
         plugins: [
-          'advlist', 'autolink', 'lists', 'link', 'charmap', 
+          'advlist', 'autolink', 'lists', 'link', 'charmap',
           'anchor', 'searchreplace', 'visualblocks', 'fullscreen',
           'insertdatetime', 'media', 'table', 'help', 'wordcount'
         ],
@@ -80,7 +80,7 @@ $(function () {
             url: `${base_url}/newsletter-subscribe`,
             data: fromData,
             beforeSend: function () {
-                $('.newsletter-btn').text('Subscribing...');   
+                $('.newsletter-btn').text('Subscribing...');
                 // disable button
                 $('.newsletter-btn').prop('disabled', true);
 
@@ -88,13 +88,13 @@ $(function () {
             success: function (data) {
                 notyf.success(data.message);
                 $('.newsletter').trigger('reset');
-                $('.newsletter-btn').text('Subscribe'); 
+                $('.newsletter-btn').text('Subscribe');
                 $('.newsletter-btn').prop('disabled', false);
             },
             error: function (xhr, status, error) {
                 notyf.error(xhr.responseJSON.message);
                 $('.newsletter').trigger('reset');
-                $('.newsletter-btn').text('Subscribe'); 
+                $('.newsletter-btn').text('Subscribe');
                 $('.newsletter-btn').prop('disabled', false);
             }
         })
