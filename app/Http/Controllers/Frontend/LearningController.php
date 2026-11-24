@@ -21,13 +21,19 @@ class LearningController extends Controller
         return view('marketplace.catalog', compact('courses', 'term'));
     }
 
-    public function show(string $slug)
+    public function show(Request $request, string $slug)
     {
         $course = $this->published($slug);
         // Never hydrate lesson bodies into a public page.
-        $lessons = DB::table('course_lessons')->where('course_id', $course->id)->orderBy('position')->orderBy('id')->get(['id', 'title', 'is_preview']);
+        $lessons = DB::table('course_lessons')->where('course_id', $course->id)->orderBy('position')->orderBy('id')->get(['id', 'title', 'is_preview', 'section_id']);
 
-        return view('marketplace.course', compact('course', 'lessons'));
+        $sections = DB::table('course_sections')->where('course_id', $course->id)->orderBy('position')->orderBy('id')->get();
+        $reviews = DB::table('course_reviews')->where('course_id', $course->id)->where('status', 'approved')->latest('id')->paginate(10);
+        $rating = DB::table('course_reviews')->where('course_id', $course->id)->where('status', 'approved')->selectRaw('COUNT(*) as total, AVG(rating) as average')->first();
+        $canReview = $this->enrolled($course, $request) && $request->user()->id !== $course->instructor_id;
+        $ownReview = $request->user() ? DB::table('course_reviews')->where('course_id', $course->id)->where('user_id', $request->user()->id)->first() : null;
+
+        return view('marketplace.course', compact('course', 'lessons', 'sections', 'reviews', 'rating', 'canReview', 'ownReview'));
     }
 
     public function enroll(Request $request, string $slug)

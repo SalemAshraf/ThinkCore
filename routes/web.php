@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\CourseReviewController;
+use App\Http\Controllers\Admin\LearnerReviewController;
 use App\Http\Controllers\Frontend\CourseController;
 use App\Http\Controllers\Frontend\CurriculumController;
 use App\Http\Controllers\Frontend\FrontendController;
@@ -89,4 +90,15 @@ Route::middleware(['auth:web', 'verified', 'check_role:instructor'])->prefix('in
 Route::middleware('auth:admin')->prefix('admin')->group(function () {
     Route::get('/course-reviews', [CourseReviewController::class, 'index'])->name('admin.course-reviews');
     Route::post('/course-reviews/{course}', [CourseReviewController::class, 'update'])->name('admin.course-reviews.update');
+});
+
+Route::post('/courses/{slug}/reviews', [App\Http\Controllers\Frontend\CourseReviewController::class, 'store'])->middleware(['auth:web', 'verified', 'throttle:10,1'])->name('marketplace.reviews.store');
+Route::middleware(['auth:web', 'verified', 'check_role:instructor'])->prefix('instructor/courses/{course}')->group(function () {
+    Route::post('/sections', [CurriculumController::class, 'storeSection'])->name('instructor.sections.store');
+    Route::patch('/sections/{section}', [CurriculumController::class, 'updateSection'])->name('instructor.sections.update');
+    Route::delete('/sections/{section}', [CurriculumController::class, 'destroySection'])->name('instructor.sections.destroy');
+});
+Route::middleware('auth:admin')->prefix('admin')->group(function () {
+    Route::get('/learner-reviews', [LearnerReviewController::class, 'index'])->name('admin.learner-reviews');
+    Route::post('/learner-reviews/{review}', [LearnerReviewController::class, 'update'])->name('admin.learner-reviews.update');
 });

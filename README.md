@@ -69,3 +69,11 @@ The additive `/courses` area provides an Arabic RTL catalog, course details, tex
 Local checks: 45 tests with 154 assertions passed after the learning-flow hardening. A real browser completed catalog, login, free enrollment, lesson, completion and library (1/1 complete). Only fictional data was used. Paid course access is blocked server-side even if the browser sends a zero price. Lesson content is escaped plain text, not untrusted HTML. Preview lessons are explicitly public; other lesson bodies never appear in the public course-details response.
 
 New learning tables are additive only. Run migrations only on a backed-up, reviewed environment. MySQL concurrency and production migrations remain unverified. No existing host was contacted or changed.
+
+## Curriculum sections and learner reviews
+
+The next additive milestone adds instructor-owned curriculum sections with ordering, renaming and deletion that preserves lessons as unsectioned. Lesson section membership is validated against its own course. Section/content edits return courses to draft pending administrator review.
+
+Enrolled, email-verified learners may submit a 1-5 rating and a text review. Course owners cannot review their own courses. There is one review per learner/course; edits return it to pending moderation. Only administrator-approved reviews appear publicly or count toward the displayed average. Public author labels indicate enrollment, not a verified identity, purchase or course completion. Review text is escaped and learner emails are not published. Administrator moderation is at `/admin/learner-reviews`; a revision check rejects stale approvals after a learner edits a review.
+
+Verification after this slice: 53 tests / 208 assertions pass locally, production assets build, route caching passes, and dependency audits report no known advisories. Actual desktop/mobile browser checks cover section creation, assigning a lesson to a section, learner review submission and the visible pending state. Approved-review display was checked with a synthetic database fixture, while administrator moderation and stale revisions were checked by automated HTTP tests. No production database, customer data, paid provider or hosting deployment was involved. MySQL production migration/concurrency checks remain required before launch.
