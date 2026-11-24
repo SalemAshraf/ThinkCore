@@ -28,21 +28,31 @@ class ProfileController extends Controller
 
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $user = User::find(Auth::id());
-        if ($request->hasFile('avatar')) {
-            $avatarPath = $this->uploadFile($request->file('avatar'), 'avatars');
-            $this->deleteFile($user->image);
-            $user->image = $avatarPath;
+        $newImage = null;
+        $oldImage = null;
+        try {
+            \Illuminate\Support\Facades\DB::transaction(function () use ($request, &$newImage, &$oldImage) {
+                $user = User::whereKey($request->user()->id)->lockForUpdate()->firstOrFail();
+                if ($request->hasFile('avatar')) {
+                    $newImage = $this->uploadFile($request->file('avatar'), 'avatars');
+                    $oldImage = $user->image;
+                    $user->image = $newImage;
+                }
+                $user->name = $request->name;
+                if ($user->email !== $request->email) $user->email_verified_at = null;
+                $user->email = $request->email;
+                $user->headline = $request->headline;
+                $user->gender = $request->gender;
+                $user->bio = $request->bio;
+                $user->save();
+                \Illuminate\Support\Facades\DB::afterCommit(function () use ($oldImage) {
+                    try { $this->deleteFile($oldImage); } catch (\Throwable $cleanup) { report($cleanup); }
+                });
+            });
+        } catch (\Throwable $exception) {
+            try { $this->deleteFile($newImage); } catch (\Throwable $cleanup) { report($cleanup); }
+            throw $exception;
         }
-        $user->name = $request->name;
-        if ($user->email !== $request->email) {
-            $user->email_verified_at = null;
-        }
-        $user->email = $request->email;
-        $user->headline = $request->headline;
-        $user->gender = $request->gender;
-        $user->bio = $request->bio;
-        $user->save();
 
         noty()->layout('bottomCenter')->success('Profile updated successfully.');
 

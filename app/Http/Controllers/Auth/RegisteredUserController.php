@@ -41,36 +41,54 @@ class RegisteredUserController extends Controller
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
-        if ($request->type === 'student') {
-            $user = User::create([
-                'name' => $request->name,
-                'email' => $request->email,
-                'password' => Hash::make($request->password),
-                'role' => 'student',
-                'approved_status' => 'approved',
-            ]);
-        } elseif ($request->type === 'instructor') {
+        $request->validate(['type' => ['required', 'in:student,instructor']]);
+        $path = null;
+        if ($request->type === 'instructor') {
             $request->validate(['document' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:10000']]);
-            $filepath = $request->file('document')->store('instructor-documents', 'local');
-            $user = User::create([
+            $path = $request->file('document')->store('instructor-documents', 'local');
+            abort_unless($path, 503, 'Document storage is unavailable.');
+        }
+        try {
+            $user = \Illuminate\Support\Facades\DB::transaction(fn () => User::create([
                 'name' => $request->name,
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
                 'role' => 'student',
-                'approved_status' => 'pending',
-                'document' => $filepath,
-            ]);
-            Mail::to($user->email)->queue(new InstructorRequestApprovalMail($user));
-        } else {
-            abort(403, 'Unauthorized action.');
+                'approved_status' => $request->type === 'instructor' ? 'pending' : 'approved',
+                'document' => $path,
+            ]));
+        } catch (\Throwable $exception) {
+            if ($path) {
+                try { \Illuminate\Support\Facades\Storage::disk('local')->delete($path); }
+                catch (\Throwable $cleanup) { report($cleanup); }
+            }
+            throw $exception;
         }
-
-        event(new Registered($user));
+        // Transport/queue failures after account commit must not make a user
+        // retry registration for an account that already exists.
+        $notificationFailed = false;
+        if ($request->type === 'instructor') {
+            try {
+                Mail::to($user->email)->queue(new InstructorRequestApprovalMail((object)[
+                    'name'=>$user->name, 'approved_status'=>'pending',
+                ]));
+            } catch (\Throwable $error) {
+                $notificationFailed = true;
+                \Illuminate\Support\Facades\Log::warning('Registration pending notification failed.', ['user_id'=>$user->id,'error_class'=>get_class($error)]);
+            }
+        }
+        try { event(new Registered($user)); }
+        catch (\Throwable $error) {
+            $notificationFailed = true;
+            \Illuminate\Support\Facades\Log::warning('Registration verification notification failed.', ['user_id'=>$user->id,'error_class'=>get_class($error)]);
+        }
 
         Auth::login($user);
 
-        noty()->layout('bottomCenter')->success('Registration successful. Please check your email for further instructions.');
+        if (! $notificationFailed) noty()->layout('bottomCenter')->success('Registration successful. Please check your email for further instructions.');
 
-        return redirect(route('home', absolute: false));
+        $response = redirect(route('home', absolute: false));
+        if ($notificationFailed) $response->with('status', 'تم إنشاء حسابك، لكن تعذّر إرسال إحدى رسائل البريد. لا تعِد التسجيل. يمكنك طلب رسالة التحقق من صفحة تأكيد البريد.');
+        return $response;
     }
 }
