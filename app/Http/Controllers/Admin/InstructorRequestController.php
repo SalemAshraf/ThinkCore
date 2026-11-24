@@ -17,9 +17,7 @@ class InstructorRequestController extends Controller
      */
     public function index()
     {
-        $instructorRequests = User::where('approved_status', 'pending')
-            ->orWhere('approved_status', 'rejected')
-            ->paginate(5);
+        $instructorRequests = User::whereNotNull('document')->whereIn('approved_status', ['pending','rejected'])->latest()->paginate(15);
 
         return view('admin.instructor-request.index', compact('instructorRequests'));
     }
@@ -68,12 +66,19 @@ class InstructorRequestController extends Controller
      */
     public function update(Request $request, User $instructors_request): RedirectResponse
     {
-        $request->validate([
-            'status' => 'required|in:pending,approved,rejected',
-        ]);
-        $instructors_request->approved_status = $request->input('status');
-        $instructors_request->role = $request->status === 'approved' ? 'instructor' : 'student';
-        $instructors_request->save();
+        $data = $request->validate(['status' => 'required|in:approved,rejected', 'snapshot'=>'required|string|size:64']);
+        \Illuminate\Support\Facades\DB::transaction(function () use ($instructors_request, $data) {
+            $locked = User::whereKey($instructors_request->id)->lockForUpdate()->firstOrFail();
+            abort_unless($locked->role === 'student' && in_array($locked->approved_status, ['pending','rejected']) && $locked->document, 409);
+            abort_unless(hash_equals(\App\Support\InstructorReviewSnapshot::token($locked), $data['snapshot']), 409);
+            if ($data['status'] === 'approved') {
+                abort_unless(str_starts_with($locked->document, 'instructor-documents/') && !str_contains($locked->document, '..') && Storage::disk('local')->exists($locked->document), 422, 'Private application document must be available before approval.');
+            }
+            $locked->approved_status = $data['status'];
+            $locked->role = $data['status'] === 'approved' ? 'instructor' : 'student';
+            $locked->save();
+        });
+        $instructors_request->refresh();
 
         if (config('mail_queue.is_queue')) {
             Mail::to($instructors_request->email)->queue(new InstructorRequestApprovalMail($instructors_request));
@@ -82,7 +87,7 @@ class InstructorRequestController extends Controller
         }
 
         return redirect()->back()
-            ->with('success', 'Instructor request status updated successfully.');
+            ->with('status', 'تم حفظ قرار مراجعة طلب التدريس.');
     }
 
     /**

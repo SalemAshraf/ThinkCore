@@ -1,31 +1,4 @@
-<x-guest-layout>
-    <div class="mb-4 text-sm text-gray-600">
-        {{ __('Thanks for signing up! Before getting started, could you verify your email address by clicking on the link we just emailed to you? If you didn\'t receive the email, we will gladly send you another.') }}
-    </div>
-
-    @if (session('status') == 'verification-link-sent')
-        <div class="mb-4 font-medium text-sm text-green-600">
-            {{ __('A new verification link has been sent to the email address you provided during registration.') }}
-        </div>
-    @endif
-
-    <div class="mt-4 flex items-center justify-between">
-        <form method="POST" action="{{ route('verification.send') }}">
-            @csrf
-
-            <div>
-                <x-primary-button>
-                    {{ __('Resend Verification Email') }}
-                </x-primary-button>
-            </div>
-        </form>
-
-        <form method="POST" action="{{ route('logout') }}">
-            @csrf
-
-            <button type="submit" class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                {{ __('Log Out') }}
-            </button>
-        </form>
-    </div>
-</x-guest-layout>
+@extends('marketplace.layout')
+@section('content')
+<div class="auth-grid"><section class="auth-form"><div class="eyebrow">حسابك على ThinkCore</div><h1>باقي خطوة واحدة.</h1><p>افتح رسالة التحقق المرسلة لبريد حسابك واضغط الرابط لتفعيل حسابك.</p><div class="notice">{{ auth('admin')->user()->email }}</div>@if(session('status')==='verification-link-sent')<p role="status">تم إرسال رابط تحقق جديد.</p>@endif<form method="post" action="{{ route('admin.verification.send') }}">@csrf<button>إعادة إرسال رسالة التحقق</button></form><p class="muted" style="margin-top:20px">يمكنك تعديل بريدك من <a href="{{ route('admin.dashboard') }}">لوحة الإدارة</a>.</p><p class="muted" style="margin-top:22px"><a href="{{ route('home') }}">العودة للاستكشاف ←</a></p></section><aside class="auth-graphic"><div class="eyebrow">مساحتك للتعلّم</div><strong>خطوة آمنة.<br>ورحلة <span style="color:var(--brand)">مستمرة.</span></strong><p>حافظ على حسابك عشان تقدر تكمّل من حيث توقفت.</p></aside></div>
+@endsection

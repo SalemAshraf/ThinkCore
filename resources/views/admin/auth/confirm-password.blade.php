@@ -1,27 +1,4 @@
-<x-guest-layout>
-    <div class="mb-4 text-sm text-gray-600">
-        {{ __('This is a secure area of the application. Please confirm your password before continuing.') }}
-    </div>
-
-    <form method="POST" action="{{ route('password.confirm') }}">
-        @csrf
-
-        <!-- Password -->
-        <div>
-            <x-input-label for="password" :value="__('Password')" />
-
-            <x-text-input id="password" class="block mt-1 w-full"
-                            type="password"
-                            name="password"
-                            required autocomplete="current-password" />
-
-            <x-input-error :messages="$errors->get('password')" class="mt-2" />
-        </div>
-
-        <div class="flex justify-end mt-4">
-            <x-primary-button>
-                {{ __('Confirm') }}
-            </x-primary-button>
-        </div>
-    </form>
-</x-guest-layout>
+@extends('marketplace.layout')
+@section('content')
+<div class="auth-grid"><section class="auth-form"><div class="eyebrow">حسابك على ThinkCore</div><h1>أكّد هويتك للمتابعة.</h1><p>أدخل كلمة المرور الحالية قبل دخول هذه الصفحة.</p><form method="post" action="{{ route('admin.password.confirm') }}">@csrf<label for="password">كلمة المرور الحالية</label><input id="password" name="password" type="password" dir="ltr" required autocomplete="current-password"><button>تأكيد ومتابعة</button></form><p class="muted" style="margin-top:22px"><a href="{{ route('home') }}">العودة للاستكشاف ←</a></p></section><aside class="auth-graphic"><div class="eyebrow">مساحتك للتعلّم</div><strong>خطوة آمنة.<br>ورحلة <span style="color:var(--brand)">مستمرة.</span></strong><p>حافظ على حسابك عشان تقدر تكمّل من حيث توقفت.</p></aside></div>
+@endsection

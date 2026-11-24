@@ -111,3 +111,11 @@ Native HTML instructor forms now support create, edit and metadata saves with re
 The previously missing existing-student instructor application now accepts a private qualification document and records a pending request for the existing administrator workflow. It cannot change the applicant's role or approval itself. Duplicate pending submissions are rejected; unsuccessful writes clean up new files. No notification email or external document disclosure was added. Instructor accounts owning courses cannot be deleted through self-service, avoiding broken content ownership.
 
 Local real-browser qualification covered native create, metadata save, edit/reload, section/lesson save, submission, administrator approval and resulting catalog visibility, plus profile save/reload and application upload/pending state. Automated tests also cover private storage, pending duplicate cleanup, role gates, upload rejection and owner/account preservation. Production MySQL concurrency, email delivery and deployment remain separate prelaunch gates.
+
+### Admin workspace
+
+Admin dashboard now uses actual user/course/enrollment totals and review-queue counts, with no template revenue or reports. Matching Arabic admin navigation links taxonomy, course/review moderation and instructor applications. Admin authentication screens share the visual system while retaining the admin guard and routes.
+
+Taxonomy routes use a validated controller with parent-bound subcategory reads/writes, stable nonempty slugs for Arabic names, correct-table uniqueness, safe image validation and preservation of in-use course metadata. Failed upload/database writes clean new files; old images are removed only after a successful save. Existing unused legacy taxonomy controllers are not used by web routes.
+
+Instructor review decisions are explicit form actions, require the same current application snapshot shown on screen, and cannot re-decide an already-approved account. Approval requires an available private document. Ordinary pending learner accounts without application documents no longer appear in the request queue. Existing decision emails remain configured behavior; local browser tests use log mail, not external sends. This does not establish production mail delivery or concurrent MySQL behavior.
