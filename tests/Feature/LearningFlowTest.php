@@ -3,6 +3,7 @@
 use App\Models\Admin;
 use App\Models\Course;
 use App\Models\User;
+use App\Support\CourseReviewSnapshot;
 use Illuminate\Support\Facades\DB;
 
 function publishedCourse(float $price = 0): Course
@@ -89,7 +90,7 @@ test('admin review publishes complete submitted course and content edits remove 
     $course->save();
     $admin = Admin::create(['name' => 'Reviewer', 'email' => 'reviewer@example.test', 'password' => 'test-password']);
     $this->actingAs($admin, 'admin')->get('/admin/course-reviews')->assertOk()->assertSee($course->title);
-    $this->post('/admin/course-reviews/'.$course->id, ['decision' => 'approved'])->assertRedirect();
+    $this->post('/admin/course-reviews/'.$course->id, ['decision' => 'approved', 'snapshot' => CourseReviewSnapshot::token($course->fresh())])->assertRedirect();
     expect($course->fresh()->status)->toBe('active');
     $this->actingAs(User::find($course->instructor_id), 'web')->post('/instructor/courses/'.$course->id.'/lessons', ['title' => 'New content', 'content' => 'Needs review', 'position' => 2])->assertRedirect();
     expect($course->fresh()->status)->toBe('draft');
@@ -114,7 +115,7 @@ test('lesson mutations enforce ownership and escape submitted markup', function 
 
 test('student cannot approve own course or bypass instructor routes', function () {
     $course = publishedCourse();
-    $this->actingAs(User::factory()->create())->post('/admin/course-reviews/'.$course->id, ['decision' => 'approved'])->assertRedirect();
+    $this->actingAs(User::factory()->create())->post('/admin/course-reviews/'.$course->id, ['decision' => 'approved', 'snapshot' => CourseReviewSnapshot::token($course->fresh())])->assertRedirect();
     $this->post('/instructor/courses/'.$course->id.'/lessons', ['title' => 'No', 'content' => 'No', 'position' => 1])->assertRedirect('/');
 });
 
@@ -152,6 +153,40 @@ test('empty course cannot be submitted or approved', function () {
     $course->status = 'inactive';
     $course->save();
     $admin = Admin::create(['name' => 'Reviewer', 'email' => 'empty-reviewer@example.test', 'password' => 'test-password']);
-    $this->actingAs($admin, 'admin')->post('/admin/course-reviews/'.$course->id, ['decision' => 'approved'])->assertStatus(422);
+    $this->actingAs($admin, 'admin')->post('/admin/course-reviews/'.$course->id, ['decision' => 'approved', 'snapshot' => CourseReviewSnapshot::token($course->fresh())])->assertStatus(422);
     expect($course->fresh()->is_approved)->toBe('pending');
+});
+
+test('stale course approval cannot publish changed resubmitted lesson content', function () {
+    $course = publishedCourse();
+    $lesson = courseLesson($course);
+    $course->status = 'inactive';
+    $course->is_approved = 'pending';
+    $course->save();
+    $snapshot = CourseReviewSnapshot::token($course->fresh());
+    $this->actingAs(User::find($course->instructor_id))->patch('/instructor/courses/'.$course->id.'/lessons/'.$lesson, ['title' => 'Updated title', 'content' => 'Changed material requiring new review', 'position' => 1])->assertRedirect();
+    $this->post('/instructor/courses/'.$course->id.'/submit')->assertRedirect();
+    $admin = Admin::create(['name' => 'Snapshot reviewer', 'email' => 'snapshot@example.test', 'password' => 'test-password']);
+    $this->actingAs($admin, 'admin')->post('/admin/course-reviews/'.$course->id, ['decision' => 'approved', 'snapshot' => $snapshot])->assertStatus(409);
+    expect($course->fresh()->status)->toBe('inactive');
+    $this->post('/admin/course-reviews/'.$course->id, ['decision' => 'approved', 'snapshot' => CourseReviewSnapshot::token($course->fresh())])->assertRedirect();
+    expect($course->fresh()->status)->toBe('active');
+});
+
+test('course decision requires exact review snapshot and snapshot includes metadata and sections', function () {
+    $course = publishedCourse();
+    courseLesson($course);
+    $course->status = 'inactive';
+    $course->is_approved = 'pending';
+    $course->save();
+    $original = CourseReviewSnapshot::token($course->fresh());
+    sectionFor($course);
+    expect(CourseReviewSnapshot::token($course->fresh()))->not->toBe($original);
+    $before = CourseReviewSnapshot::token($course->fresh());
+    $course->price = 99;
+    $course->save();
+    expect(CourseReviewSnapshot::token($course->fresh()))->not->toBe($before);
+    $admin = Admin::create(['name' => 'Token reviewer', 'email' => 'token@example.test', 'password' => 'test-password']);
+    $this->actingAs($admin, 'admin')->postJson('/admin/course-reviews/'.$course->id, ['decision' => 'approved'])->assertUnprocessable()->assertJsonValidationErrors('snapshot');
+    $this->get('/admin/course-reviews')->assertOk()->assertSee('name="snapshot"', false);
 });

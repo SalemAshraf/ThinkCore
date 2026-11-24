@@ -10,6 +10,7 @@ use App\Models\CourseLanguage;
 use App\Models\CourseLevel;
 use App\Traits\FileUpload;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
@@ -55,6 +56,11 @@ class CourseController extends Controller
 
     public function moreinfo(Request $request)
     {
+        return DB::transaction(fn () => $this->saveMoreInfo($request));
+    }
+
+    private function saveMoreInfo(Request $request)
+    {
         // Resolve ownership before validation or file operations. Foreign IDs are never exposed.
         $course = $this->ownedCourse($request);
         $request->validate(['current_step' => ['required', Rule::in([1, 2])]]);
@@ -89,7 +95,7 @@ class CourseController extends Controller
 
     private function ownedCourse(Request $request): Course
     {
-        return Course::where('instructor_id', $request->user()->id)->findOrFail($request->route('id') ?? $request->input('id'));
+        return Course::where('instructor_id', $request->user()->id)->lockForUpdate()->findOrFail($request->route('id') ?? $request->input('id'));
     }
 
     private function saveBasicInfo(Request $request, Course $course): void
