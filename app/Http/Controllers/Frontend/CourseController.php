@@ -85,6 +85,11 @@ class CourseController extends Controller
 
     public function moreinfo(Request $request)
     {
+        // Metadata can deadlock with a taxonomy reference scan. It has no file
+        // side effects and each retry resolves a fresh, locked course instance.
+        if ((int) $request->input('current_step') === 2) {
+            return DB::transaction(fn () => $this->saveMoreInfo($request), 5);
+        }
         return $this->withSafeUploads(fn () => $this->saveMoreInfo($request));
     }
 
