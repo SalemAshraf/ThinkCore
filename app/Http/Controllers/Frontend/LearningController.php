@@ -15,7 +15,7 @@ class LearningController extends Controller
         $categories = DB::table('course_categories')->where('status', 1)->orderBy('name')->get(['id', 'name']);
         $levels = DB::table('course_levels')->orderBy('name')->get(['id', 'name']);
         $languages = DB::table('course_languages')->orderBy('name')->get(['id', 'name']);
-        $query = Course::where('status', 'active')->where('is_approved', 'approved');
+        $query = Course::query()->leftJoin('users as teacher', 'teacher.id', '=', 'courses.instructor_id')->leftJoin('course_categories as category', 'category.id', '=', 'courses.category_id')->leftJoin('course_levels as level', 'level.id', '=', 'courses.course_level_id')->where('courses.status', 'active')->where('courses.is_approved', 'approved')->select('courses.*', 'teacher.name as instructor_name', 'category.name as category_name', 'level.name as level_name');
         $term = mb_substr(trim((string) $request->query('q', '')), 0, 120);
         if ($term !== '') {
             $query->where('title', 'like', '%'.addcslashes($term, '%_\\').'%');
@@ -28,7 +28,7 @@ class LearningController extends Controller
         if (! empty($filters['free'])) {
             $query->where('price', 0)->whereNotNull('price');
         }
-        $courses = $query->latest()->paginate(12)->withQueryString();
+        $courses = $query->latest('courses.created_at')->paginate(12)->withQueryString();
 
         return view('marketplace.catalog', compact('courses', 'term', 'filters', 'categories', 'levels', 'languages'));
     }
@@ -36,6 +36,11 @@ class LearningController extends Controller
     public function show(Request $request, string $slug)
     {
         $course = $this->published($slug);
+        $course->instructor_name = DB::table('users')->where('id', $course->instructor_id)->value('name');
+        $course->category_name = DB::table('course_categories')->where('id', $course->category_id)->value('name');
+        $course->level_name = DB::table('course_levels')->where('id', $course->course_level_id)->value('name');
+        $course->language_name = DB::table('course_languages')->where('id', $course->course_language_id)->value('name');
+        $isEnrolled = $this->enrolled($course, $request);
         // Never hydrate lesson bodies into a public page.
         $lessons = DB::table('course_lessons')->where('course_id', $course->id)->orderBy('position')->orderBy('id')->get(['id', 'title', 'is_preview', 'section_id']);
 
@@ -45,7 +50,7 @@ class LearningController extends Controller
         $canReview = $this->enrolled($course, $request) && $request->user()->id !== $course->instructor_id;
         $ownReview = $request->user() ? DB::table('course_reviews')->where('course_id', $course->id)->where('user_id', $request->user()->id)->first() : null;
 
-        return view('marketplace.course', compact('course', 'lessons', 'sections', 'reviews', 'rating', 'canReview', 'ownReview'));
+        return view('marketplace.course', compact('course', 'lessons', 'sections', 'reviews', 'rating', 'canReview', 'ownReview', 'isEnrolled'));
     }
 
     public function enroll(Request $request, string $slug)
@@ -62,7 +67,7 @@ class LearningController extends Controller
             }
         });
 
-        return redirect()->route('marketplace.course', $course->slug)->with('status', 'You are enrolled.');
+        return redirect()->route('marketplace.course', $course->slug)->with('status', 'تم انضمامك للكورس. رحلتك تبدأ من أول درس.');
     }
 
     public function lesson(Request $request, string $slug, int $lesson)
@@ -98,7 +103,7 @@ class LearningController extends Controller
         abort_unless(DB::table('course_lessons')->where('course_id', $course->id)->where('id', $lesson)->exists(), 404);
         DB::table('lesson_completions')->insertOrIgnore(['course_lesson_id' => $lesson, 'user_id' => $request->user()->id, 'created_at' => now(), 'updated_at' => now()]);
 
-        return back()->with('status', 'Lesson marked complete.');
+        return back()->with('status', 'تم تسجيل الدرس كمكتمل. خطوة جديدة في رحلتك.');
     }
 
     public function library(Request $request)

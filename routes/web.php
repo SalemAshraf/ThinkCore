@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Route;
  * Frontend Routes
  * ----------------------
  */
-Route::get('/', [FrontendController::class, 'index'])->name('home');
+Route::get('/', [LearningController::class, 'catalog'])->name('home');
 
 /**
  * ----------------------
