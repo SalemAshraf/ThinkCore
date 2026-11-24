@@ -11,7 +11,8 @@ trait FileUpload
     {
         try {
             $filename = 'thinkcore_'.uniqid().'.'.$file->getClientOriginalExtension();
-            $file->storeAs($directory, $filename, 'public');
+            $stored = $file->storeAs($directory, $filename, 'public');
+            if ($stored === false) throw new \RuntimeException('Storage did not accept the upload.');
 
             return '/storage/'.$directory.'/'.$filename;
         } catch (\Exception $e) {

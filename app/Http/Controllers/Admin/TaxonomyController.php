@@ -66,6 +66,11 @@ class TaxonomyController extends Controller
         $oldFiles = [];
         try {
             DB::transaction(function () use ($request, $context, $item, $data, &$newFiles, &$oldFiles) {
+                if ($context['parent']) {
+                    $parent = CourseCategory::whereKey($context['parent']->id)->whereNull('parent_id')->lockForUpdate()->first();
+                    abort_unless($parent, 409, 'Parent category no longer exists.');
+                }
+                if ($item->exists) $item = $context['model']::whereKey($item->id)->lockForUpdate()->firstOrFail();
                 $item->name = $data['name'];
                 if (!$item->exists) $item->slug = (Str::slug($data['name']) ?: 'topic').'-'.Str::lower(Str::random(10));
                 if (in_array($context['kind'], ['categories','sub-categories'])) {
@@ -86,20 +91,36 @@ class TaxonomyController extends Controller
             foreach ($newFiles as $file) $this->deleteFile($file);
             throw $exception;
         }
-        foreach ($oldFiles as $file) $this->deleteFile($file);
+        DB::afterCommit(function () use ($oldFiles) {
+            foreach ($oldFiles as $file) {
+                try { $this->deleteFile($file); } catch (\Throwable $cleanup) { report($cleanup); }
+            }
+        });
         return redirect()->route($context['prefix'].'.index', $context['parent'] ? [$context['parent']->id] : [])->with('status','تم حفظ البيانات.');
     }
 
     public function destroy(Request $request)
     {
         $context = $this->context($request);
-        $item = $this->item($request,$context);
-        $column = match ($context['kind']) {'categories','sub-categories'=>'category_id','languages'=>'course_language_id',default=>'course_level_id'};
-        if (Course::where($column,$item->id)->exists() || (in_array($context['kind'],['categories','sub-categories']) && CourseCategory::where('parent_id',$item->id)->exists())) {
-            return back()->withErrors(['delete'=>'لا يمكن حذف عنصر مستخدم في كورسات أو مرتبط بتصنيفات فرعية.']);
-        }
-        $item->delete();
-        foreach (['image','icon'] as $field) $this->deleteFile($item->$field);
+        $deleted = DB::transaction(function () use ($request, $context) {
+            // Child writes lock parent first too, preventing create/delete races.
+            if ($context['parent']) CourseCategory::whereKey($context['parent']->id)->lockForUpdate()->firstOrFail();
+            $item = $this->item($request,$context);
+            $item = $context['model']::whereKey($item->id)->lockForUpdate()->firstOrFail();
+            $column = match ($context['kind']) {'categories','sub-categories'=>'category_id','languages'=>'course_language_id',default=>'course_level_id'};
+            // Locking reads see current committed data on MySQL, not an older snapshot.
+            $inUse = Course::where($column,$item->id)->lockForUpdate()->first(['id']);
+            $hasChildren = in_array($context['kind'],['categories','sub-categories']) && CourseCategory::where('parent_id',$item->id)->lockForUpdate()->first(['id']);
+            if ($inUse || $hasChildren) return false;
+            $item->delete();
+            DB::afterCommit(function () use ($item) {
+                foreach (['image','icon'] as $field) {
+                    try { $this->deleteFile($item->$field); } catch (\Throwable $cleanup) { report($cleanup); }
+                }
+            });
+            return true;
+        }, 5);
+        if (!$deleted) return back()->withErrors(['delete'=>'لا يمكن حذف عنصر مستخدم في كورسات أو مرتبط بتصنيفات فرعية.']);
         return back()->with('status','تم حذف العنصر غير المستخدم.');
     }
 }

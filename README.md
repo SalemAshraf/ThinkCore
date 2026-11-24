@@ -44,15 +44,18 @@ php artisan route:clear
 
 The first maintenance milestone passed 32 automated tests with 92 assertions, a production asset build and route caching at that maintenance milestone. Both dependency audits reported no known advisories at the check time. This is not a guarantee against undiscovered vulnerabilities. Browser checks cover login and the instructor draft form on desktop and mobile; the existing marketing template still needs content and design work.
 
-## Remaining product work
+## Remaining product and prelaunch work
 
-1. Curriculum follow-up: sections, private attachments and safe draft-course deletion. Ordered text lessons now support owner-scoped create/edit/delete and review resubmission.
-2. Administrator review/publishing and a database-backed catalog/search/details now work in the initial text-course flow. The original homepage remains unchanged and contains template/sample content, not verified marketplace activity. The new catalog is at `/courses`, not a replaced homepage.
-3. Free-course enrollment, entitlement-checked text lessons, completion and learner library now work. Paid orders, video and attachment delivery remain unimplemented. Never accept a browser-supplied enrollment or price as authority.
-4. Payment-provider selection, signed idempotent webhooks, orders, refunds and instructor settlement. No real payments are implemented or authorized by this maintenance pass.
-5. Private video/attachment storage and entitlement checks. External demo links are public previews only. Do not promise screen-recording prevention.
-6. Reviews restricted to enrolled learners, moderation, notifications, queues and operational monitoring.
-7. Production readiness: backup/restore, MySQL tests, rate limits, file and API permissions, accessibility, responsive templates, privacy/terms and recovery flows.
+Current source supports free text courses, sections, moderated publication/reviews, catalog/search, enrollment/progress/library, instructor studio/account/application and administrator taxonomy/review workspaces. The root homepage now uses real approved catalog data. Earlier milestone counts below are historical, not the latest full suite result.
+
+Remaining work is not an implicit authorization to choose or buy a service:
+
+1. Paid orders, signed idempotent payment webhooks, refunds and instructor settlement are not implemented. Provider, currency and business rules require decisions before implementation or payment activity.
+2. Private video/attachments need storage/delivery design and entitlement enforcement. External demo links are public previews only. Do not promise screen-recording prevention.
+3. Course edits currently withdraw publication pending review, including learner lesson access. Keep this behavior until the owner decides whether enrollment access should persist through edits.
+4. Instructor decision email currently follows its database commit; delivery failure can return an error after approval succeeds. Durable retry/operational state is still needed. No live mail is exercised by local tests.
+5. Production qualification: real concurrent MySQL tests, backup/restore, deployment/recovery, rate limits, API/file permissions, accessibility, privacy/terms and reviewed migration of any legacy public applicant documents.
+6. Safe draft-course deletion is not implemented. No course deletion/production-data cleanup should be inferred.
 
 ## Upgrade and deployment notes
 
@@ -119,3 +122,9 @@ Admin dashboard now uses actual user/course/enrollment totals and review-queue c
 Taxonomy routes use a validated controller with parent-bound subcategory reads/writes, stable nonempty slugs for Arabic names, correct-table uniqueness, safe image validation and preservation of in-use course metadata. Failed upload/database writes clean new files; old images are removed only after a successful save. Existing unused legacy taxonomy controllers are not used by web routes.
 
 Instructor review decisions are explicit form actions, require the same current application snapshot shown on screen, and cannot re-decide an already-approved account. Approval requires an available private document. Ordinary pending learner accounts without application documents no longer appear in the request queue. Existing decision emails remain configured behavior; local browser tests use log mail, not external sends. This does not establish production mail delivery or concurrent MySQL behavior.
+
+### Write-integrity hardening
+
+Active web course-metadata writers now lock and recheck selected taxonomy records inside their transaction. Admin deletion locks the same taxonomy row and performs current locking reads for course/child references before deletion; nested child writes lock their parent first. This closes the previous check-delete gap for those coordinated active paths, pending real multi-process MySQL qualification. There are still no database foreign keys on these legacy taxonomy columns, so scripts or future writers that bypass this protocol are not protected. Such writers must join the protocol or a separately audited constraint migration is required.
+
+Course thumbnail creation/replacement now removes new uploads when database writes fail and defers deletion of the old image until transaction commit. Cleanup failures are reported without deleting the newly committed image; orphan-file reconciliation remains an operational concern. Upload storage failures are no longer silently treated as success. Regression tests inject failed course inserts/updates and verify original bytes and absence of leaked new files. Source tests do not prove concurrent MySQL execution or production migration readiness. Learner publication/access behavior and external mail behavior are unchanged.

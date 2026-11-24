@@ -34,8 +34,37 @@ class CourseController extends Controller
     {
         $course = new Course;
         $course->instructor_id = $request->user()->id;
-        $this->saveBasicInfo($request, $course);
+        return $this->withSafeUploads(fn () => $this->createBasicInfo($request, $course));
+    }
 
+    private array $newUploads = [];
+    private array $oldUploads = [];
+
+    private function withSafeUploads(callable $write)
+    {
+        $this->newUploads = $this->oldUploads = [];
+        try {
+            return DB::transaction(function () use ($write) {
+                $response = $write();
+                $oldFiles = $this->oldUploads;
+                DB::afterCommit(function () use ($oldFiles) {
+                    foreach ($oldFiles as $file) {
+                        try { $this->deleteFile($file); } catch (\Throwable $cleanup) { report($cleanup); }
+                    }
+                });
+                return $response;
+            });
+        } catch (\Throwable $exception) {
+            foreach ($this->newUploads as $file) {
+                try { $this->deleteFile($file); } catch (\Throwable $cleanup) { report($cleanup); }
+            }
+            throw $exception;
+        }
+    }
+
+    private function createBasicInfo(Request $request, Course $course)
+    {
+        $this->saveBasicInfo($request, $course);
         return $this->nextStep($request, $course, 2);
     }
 
@@ -56,7 +85,7 @@ class CourseController extends Controller
 
     public function moreinfo(Request $request)
     {
-        return DB::transaction(fn () => $this->saveMoreInfo($request));
+        return $this->withSafeUploads(fn () => $this->saveMoreInfo($request));
     }
 
     private function saveMoreInfo(Request $request)
@@ -79,6 +108,7 @@ class CourseController extends Controller
             'level' => ['nullable', 'integer', 'exists:course_levels,id'],
             'language' => ['nullable', 'integer', 'exists:course_languages,id'],
         ]);
+        \App\Support\TaxonomyReferences::lock($data);
         $course->capacity = $data['capacity'] ?? null;
         $course->duration = $data['duration'] ?? null;
         $course->qna = $request->boolean('qna');
@@ -111,7 +141,8 @@ class CourseController extends Controller
         if ($request->hasFile('thumbnail')) {
             $old = $course->thumbnail;
             $course->thumbnail = $this->uploadFile($request->file('thumbnail'), 'thumbnail');
-            $this->deleteFile($old);
+            $this->newUploads[] = $course->thumbnail;
+            $this->oldUploads[] = $old;
         }
         $course->demo_video = $request->input('demo_video') ?: null;
         $course->demo_video_source = $request->input('demo_video_source') ?: $request->input('url');
