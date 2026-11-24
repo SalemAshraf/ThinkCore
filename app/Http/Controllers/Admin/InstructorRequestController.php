@@ -3,11 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Mail\InstructorRequestApprovalMail;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 
 class InstructorRequestController extends Controller
@@ -74,18 +72,18 @@ class InstructorRequestController extends Controller
             if ($data['status'] === 'approved') {
                 abort_unless(str_starts_with($locked->document, 'instructor-documents/') && !str_contains($locked->document, '..') && Storage::disk('local')->exists($locked->document), 422, 'Private application document must be available before approval.');
             }
+            $notification = [
+                'user_id'=>$locked->id,
+                'decision_key'=>hash('sha256', $locked->id.':'.$data['snapshot'].':'.$data['status']),
+                'recipient'=>$locked->email, 'recipient_name'=>$locked->name,
+                'decision'=>$data['status'], 'decided_at'=>now(),
+                'status'=>'pending', 'created_at'=>now(), 'updated_at'=>now(),
+            ];
             $locked->approved_status = $data['status'];
             $locked->role = $data['status'] === 'approved' ? 'instructor' : 'student';
             $locked->save();
+            \Illuminate\Support\Facades\DB::table('instructor_decision_notifications')->insert($notification);
         });
-        $instructors_request->refresh();
-
-        if (config('mail_queue.is_queue')) {
-            Mail::to($instructors_request->email)->queue(new InstructorRequestApprovalMail($instructors_request));
-        } else {
-            Mail::to($instructors_request->email)->send(new InstructorRequestApprovalMail($instructors_request));
-        }
-
         return redirect()->back()
             ->with('status', 'تم حفظ قرار مراجعة طلب التدريس.');
     }

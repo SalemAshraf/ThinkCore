@@ -34,3 +34,4 @@ cd "$APP_DIR"
 "$PHP_BIN" -r '$p=new PDO("mysql:unix_socket=".getenv("DB_SOCKET"),"root","");$p->exec("CREATE DATABASE IF NOT EXISTS thinkcore_fictional_qualification");'
 "$PHP_BIN" artisan migrate --force
 "$PHP_BIN" "$APP_DIR/tests/Concurrency/taxonomy.php"
+"$PHP_BIN" "$APP_DIR/tests/Concurrency/outbox.php"
