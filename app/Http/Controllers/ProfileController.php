@@ -48,6 +48,10 @@ class ProfileController extends Controller
 
         $user = $request->user();
 
+        if (\App\Models\Course::where('instructor_id', $user->id)->exists()) {
+            return back()->withErrors(['password' => 'لا يمكن حذف حساب مرتبط بكورسات. راجع إدارة المنصة أولًا للحفاظ على محتوى المتعلّمين.'], 'userDeletion');
+        }
+
         Auth::logout();
 
         $user->delete();

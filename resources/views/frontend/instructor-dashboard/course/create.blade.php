@@ -1,76 +1,13 @@
 @extends('frontend.instructor-dashboard.course.course-app')
 @section('course-content')
-    <div class="tab-pane fade show active" id="pills-home" role="tabpanel" aria-labelledby="pills-home-tab" tabindex="0">
-        <div class="add_course_basic_info">
-            <form action="{{ route('instructor.courses.store.basic_info') }}" method="POST" enctype="multipart/form-data"
-                class="basic-info-form course-form">
-                @csrf
-                <input type="hidden" name="current_step" value="1">
-                <input type="hidden" name="next_step" value="2">
-                <div class="row">
-                    <div class="col-xl-12">
-                        <div class="add_course_basic_info_imput">
-                            <label for="#">Title *</label>
-                            <input type="text" placeholder="Title" name="title">
-                        </div>
-                    </div>
-                    <div class="col-xl-12">
-                        <div class="add_course_basic_info_imput">
-                            <label for="#">Seo description</label>
-                            <input type="text" placeholder="Seo description" name="seo_description">
-                        </div>
-                    </div>
-                    <div class="col-xl-12">
-                        <div class="add_course_basic_info_imput">
-                            <label for="#">Thumbnail *</label>
-                            <input type="file" name="thumbnail">
-                        </div>
-                    </div>
-                    <div class="col-xl-6">
-                        <div class="add_course_basic_info_imput">
-                        <label for="#">Demo Video Storage <b>(optional)</b></label>
-                        <select class="form-select storage" name="demo_video">
-                            <option value=""> Please Select </option>
-
-                            <option value="youtube"> Youtube </option>
-                            <option value="vimeo"> Vimeo </option>
-                            <option value="link"> External Link </option>
-                        </select>
-                    </div>
-                    </div>
-                    <div class="col-xl-6">
-                        <div class="add_course_basic_info_imput">
-                            <label for="demo-url">Demo video URL (optional)</label>
-                            <input id="demo-url" type="url" name="demo_video_source" value="{{ old('demo_video_source') }}" placeholder="https://">
-                        </div>
-                    </div>
-                    <div class="col-xl-6">
-                        <div class="add_course_basic_info_imput">
-                            <label for="#">Price *</label>
-                            <input type="text" placeholder="Price" name="price">
-                            <p>Put 0 for free</p>
-                        </div>
-                    </div>
-                    <div class="col-xl-6">
-                        <div class="add_course_basic_info_imput">
-                            <label for="#">Discount Price</label>
-                            <input type="text" placeholder="Price" name="discount">
-                        </div>
-                    </div>
-                    <div class="col-xl-12">
-                        <div class="add_course_basic_info_imput mb-0">
-                            <label for="#">Description</label>
-                            <textarea rows="8" placeholder="Description" name="description"></textarea>
-                            <button type="submit" class="common_btn mt_20">Next</button>
-                        </div>
-                    </div>
-                </div>
-            </form>
-        </div>
-    </div>
+<h2>البيانات الأساسية</h2><p class="muted">عرّف المتعلّمين بما سيجدونه في كورسك.</p>
+<form method="post" enctype="multipart/form-data" action="{{ isset($course) ? route('instructor.courses.moreinfo') : route('instructor.courses.store.basic_info') }}">@csrf
+@if(isset($course))<input type="hidden" name="id" value="{{ $course->id }}">@endif<input type="hidden" name="current_step" value="1">
+<label for="title">عنوان الكورس</label><input id="title" name="title" value="{{ old('title', $course->title ?? '') }}" required maxlength="255" placeholder="مثال: أساسيات تطوير الويب من الصفر">
+<label for="description">عن الكورس</label><textarea id="description" name="description" rows="7" required>{{ old('description', $course->description ?? '') }}</textarea>
+<label for="seo_description">وصف قصير لمحركات البحث</label><input id="seo_description" name="seo_description" maxlength="255" value="{{ old('seo_description', $course->seo_description ?? '') }}">
+<label for="thumbnail">صورة غلاف الكورس</label><input id="thumbnail" name="thumbnail" type="file" accept=".jpg,.jpeg,.png,.gif"><small>صورة بحد أقصى 2 ميجابايت. ترك الحقل فارغًا يحافظ على الصورة الحالية.</small>
+<div class="form-grid"><div><label for="price">السعر المسجّل</label><input id="price" name="price" type="number" step="0.01" min="0" value="{{ old('price', $course->price ?? 0) }}" required><small>اكتب 0 لكورس مجاني. الانضمام المدفوع غير متاح.</small></div><div><label for="discount">قيمة الخصم المسجّلة</label><input id="discount" name="discount" type="number" step="0.01" min="0" value="{{ old('discount', $course->discount ?? 0) }}"></div></div>
+<details class="advanced"><summary>بيانات فيديو تعريفي اختيارية (لا يتم تشغيله حاليًا)</summary><label for="demo_video">مصدر الفيديو</label><select id="demo_video" name="demo_video"><option value="">بدون فيديو</option>@foreach(['youtube'=>'YouTube','vimeo'=>'Vimeo','link'=>'رابط خارجي'] as $value=>$label)<option value="{{ $value }}" @selected(old('demo_video', $course->demo_video ?? '')===$value)>{{ $label }}</option>@endforeach</select><label for="demo_video_source">رابط الفيديو</label><input id="demo_video_source" name="demo_video_source" type="url" dir="ltr" value="{{ old('demo_video_source', $course->demo_video_source ?? '') }}"></details>
+<div class="form-actions"><button type="submit">حفظ ومتابعة للإعدادات ←</button><a href="{{ route('instructor.courses') }}">العودة للكورسات</a></div></form>
 @endsection
-@push('scripts')
-<script>
-     $('#lfm').filemanager('file');
-</script>
-@endpush

@@ -27,6 +27,7 @@ Route::get('/', [LearningController::class, 'catalog'])->name('home');
 Route::group(['middleware' => ['auth:web', 'verified', 'check_role:student'], 'prefix' => 'student', 'as' => 'student.'], function () {
     Route::get('/dashboard', [UserDashboardController::class, 'index'])->name('dashboard');
     Route::get('/become-instructor', [UserDashboardController::class, 'becomeInstructor'])->name('become-instructor');
+    Route::post('/become-instructor', [UserDashboardController::class, 'applyInstructor'])->middleware('throttle:5,1')->name('become-instructor.apply');
 
     // Profile Routes
     Route::get('/profile', [ProfileController::class, 'index'])->name('profile');

@@ -36,7 +36,7 @@ class CourseController extends Controller
         $course->instructor_id = $request->user()->id;
         $this->saveBasicInfo($request, $course);
 
-        return $this->nextStep($course, 2);
+        return $this->nextStep($request, $course, 2);
     }
 
     public function edit(Request $request)
@@ -68,7 +68,7 @@ class CourseController extends Controller
             $request->validate((new CourseBasicInfoCreateRequest)->rules());
             $this->saveBasicInfo($request, $course);
 
-            return $this->nextStep($course, 2);
+            return $this->nextStep($request, $course, 2);
         }
         $data = $request->validate([
             'capacity' => ['nullable', 'integer', 'min:1'],
@@ -90,7 +90,7 @@ class CourseController extends Controller
         $course->is_approved = 'pending';
         $course->save();
 
-        return response()->json(['status' => 'Done', 'redirect' => route('instructor.courses')]);
+        return $request->expectsJson() ? response()->json(['status' => 'Done', 'redirect' => route('instructor.courses')]) : redirect()->route('instructor.courses')->with('status', 'تم حفظ إعدادات الكورس كمسودة.');
     }
 
     private function ownedCourse(Request $request): Course
@@ -120,8 +120,9 @@ class CourseController extends Controller
         $course->save();
     }
 
-    private function nextStep(Course $course, int $step)
+    private function nextStep(Request $request, Course $course, int $step)
     {
-        return response()->json(['status' => 'Done', 'redirect' => route('instructor.courses.edit', ['id' => $course->id, 'step' => $step])]);
+        $url = route('instructor.courses.edit', ['id' => $course->id, 'step' => $step]);
+        return $request->expectsJson() ? response()->json(['status' => 'Done', 'redirect' => $url]) : redirect($url)->with('status', 'تم حفظ البيانات الأساسية كمسودة.');
     }
 }

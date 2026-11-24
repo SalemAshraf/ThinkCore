@@ -1,25 +1,4 @@
-<x-guest-layout>
-    <div class="mb-4 text-sm text-gray-600">
-        {{ __('Forgot your password? No problem. Just let us know your email address and we will email you a password reset link that will allow you to choose a new one.') }}
-    </div>
-
-    <!-- Session Status -->
-    <x-auth-session-status class="mb-4" :status="session('status')" />
-
-    <form method="POST" action="{{ route('password.email') }}">
-        @csrf
-
-        <!-- Email Address -->
-        <div>
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autofocus />
-            <x-input-error :messages="$errors->get('email')" class="mt-2" />
-        </div>
-
-        <div class="flex items-center justify-end mt-4">
-            <x-primary-button>
-                {{ __('Email Password Reset Link') }}
-            </x-primary-button>
-        </div>
-    </form>
-</x-guest-layout>
+@extends('marketplace.layout')
+@section('content')
+<div class="auth-grid"><section class="auth-form"><div class="eyebrow">حسابك على ThinkCore</div><h1>نسيت كلمة المرور؟</h1><p>اكتب بريد حسابك لطلب رابط إعادة التعيين.</p><form method="post" action="{{ route('password.email') }}">@csrf<label for="email">البريد الإلكتروني</label><input id="email" name="email" type="email" dir="ltr" value="{{ old('email') }}" required autocomplete="username"><button>إرسال رابط إعادة التعيين</button></form><p class="muted" style="margin-top:22px"><a href="{{ route('home') }}">العودة للاستكشاف ←</a></p></section><aside class="auth-graphic"><div class="eyebrow">مساحتك للتعلّم</div><strong>خطوة آمنة.<br>ورحلة <span style="color:var(--brand)">مستمرة.</span></strong><p>حافظ على حسابك عشان تقدر تكمّل من حيث توقفت.</p></aside></div>
+@endsection

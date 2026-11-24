@@ -18,14 +18,12 @@ class ProfileController extends Controller
 
     public function index()
     {
-        // Logic to display the user's profile
-        return view('frontend.student-dashboard.profile.index');
+        return redirect()->route('profile.edit');
     }
 
     public function instructorIndex()
     {
-        // Logic to display the user's profile
-        return view('frontend.instructor-dashboard.profile.index');
+        return redirect()->route('profile.edit');
     }
 
     public function update(ProfileUpdateRequest $request): RedirectResponse
@@ -48,7 +46,7 @@ class ProfileController extends Controller
 
         noty()->layout('bottomCenter')->success('Profile updated successfully.');
 
-        return redirect()->back();
+        return redirect()->back()->with('status', 'تم حفظ التغييرات.');
     }
 
     public function updatePassword(PasswordUpdateRequest $request)
@@ -72,7 +70,7 @@ class ProfileController extends Controller
         $user->save();
         noty()->layout('bottomCenter')->success('Password updated successfully.');
 
-        return redirect()->back();
+        return redirect()->back()->with('status', 'تم حفظ التغييرات.');
     }
 
     public function updateSocial(SocialUpdateRequest $request)
@@ -86,6 +84,6 @@ class ProfileController extends Controller
         $user->save();
         noty()->layout('bottomCenter')->success('Social links updated successfully.');
 
-        return redirect()->back();
+        return redirect()->back()->with('status', 'تم حفظ التغييرات.');
     }
 }

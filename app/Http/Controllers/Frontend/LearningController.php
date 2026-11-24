@@ -93,7 +93,7 @@ class LearningController extends Controller
         }
         $completed = $enrolled && DB::table('lesson_completions')->where('user_id', $request->user()->id)->where('course_lesson_id', $lesson->id)->exists();
 
-        return view('marketplace.lesson', compact('course', 'lesson', 'enrolled', 'previous', 'next', 'completed'));
+        return view('marketplace.lesson', compact('course', 'lesson', 'enrolled', 'previous', 'next', 'completed', 'ordered', 'mayReadAll'));
     }
 
     public function complete(Request $request, string $slug, int $lesson)

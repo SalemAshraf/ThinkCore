@@ -1,29 +1,7 @@
-<x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Profile') }}
-        </h2>
-    </x-slot>
-
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
-            <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
-                <div class="max-w-xl">
-                    @include('profile.partials.update-profile-information-form')
-                </div>
-            </div>
-
-            <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
-                <div class="max-w-xl">
-                    @include('profile.partials.update-password-form')
-                </div>
-            </div>
-
-            <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
-                <div class="max-w-xl">
-                    @include('profile.partials.delete-user-form')
-                </div>
-            </div>
-        </div>
-    </div>
-</x-app-layout>
+@extends('marketplace.layout')
+@section('content')
+<section class="page-intro"><div class="eyebrow">مساحتك الشخصية</div><h1>إعدادات حسابك.</h1><p class="muted" style="margin-top:12px">حدّث بياناتك وحافظ على أمان حسابك.</p></section><div class="profile-shell"><section class="panel"><h2>بيانات الحساب</h2><p class="muted">تغيير البريد يتطلب التحقق منه مجددًا.</p>@if(session('status')==='profile-updated')<p class="notice">تم حفظ بيانات حسابك.</p>@endif<form method="post" action="{{ route('profile.update') }}">@csrf @method('patch')<label for="name">الاسم</label><input id="name" name="name" value="{{ old('name',$user->name) }}" autocomplete="name" required maxlength="255"><label for="email">البريد الإلكتروني</label><input id="email" name="email" type="email" dir="ltr" value="{{ old('email',$user->email) }}" autocomplete="username" required><div class="form-actions"><button>حفظ البيانات</button></div></form>@if(!$user->hasVerifiedEmail())<div class="notice">بريدك لم يتم التحقق منه بعد.<form method="post" action="{{ route('verification.send') }}">@csrf<button class="secondary" style="margin-top:10px">إرسال رابط التحقق</button></form></div>@endif</section>
+<section class="panel"><h2>ملفك التعريفي</h2><p class="muted">أضف نبذة وروابطك. لا تغيّر هذه الحقول صلاحية حسابك أو حالة طلب التدريس.</p><form method="post" enctype="multipart/form-data" action="{{ route($user->role === 'instructor' ? 'instructor.profile.update' : 'student.profile.update') }}">@csrf<input type="hidden" name="name" value="{{ $user->name }}"><input type="hidden" name="email" value="{{ $user->email }}"><label for="headline">الصفة أو التخصص</label><input id="headline" name="headline" value="{{ old('headline',$user->headline) }}" maxlength="255" required><label for="gender">النوع</label><select id="gender" name="gender" required><option value="">اختر</option><option value="male" @selected(old('gender',$user->gender)==='male')>ذكر</option><option value="female" @selected(old('gender',$user->gender)==='female')>أنثى</option></select><label for="bio">نبذة عنك</label><textarea id="bio" name="bio" rows="4" maxlength="1000">{{ old('bio',$user->bio) }}</textarea><label for="avatar">الصورة الشخصية</label><input id="avatar" name="avatar" type="file" accept=".jpg,.jpeg,.png,.gif"><small>صورة حتى 5 ميجابايت. اترك الحقل فارغًا للحفاظ على الصورة الحالية.</small><div class="form-actions"><button>حفظ الملف التعريفي</button></div></form><hr class="divider"><h3>روابطك</h3><form method="post" action="{{ route($user->role === 'instructor' ? 'instructor.profile.social.update' : 'student.profile.social.update') }}">@csrf @foreach(['website'=>'الموقع الشخصي','linkedin'=>'LinkedIn','github'=>'GitHub','facebook'=>'Facebook','twitter'=>'X / Twitter'] as $field=>$label)<label for="social-{{ $field }}">{{ $label }}</label><input id="social-{{ $field }}" name="{{ $field }}" type="url" dir="ltr" value="{{ old($field,$user->$field) }}">@endforeach<div class="form-actions"><button>حفظ الروابط</button></div></form></section>
+<section class="panel"><h2>كلمة المرور</h2><p class="muted">استخدم كلمة مرور قوية لا تستخدمها في مكان آخر.</p>@if(session('status')==='password-updated')<p class="notice">تم تغيير كلمة المرور.</p>@endif @foreach($errors->updatePassword->all() as $error)<p class="error">{{ $error }}</p>@endforeach<form method="post" action="{{ route('password.update') }}">@csrf @method('put')<label for="current_password">كلمة المرور الحالية</label><input id="current_password" name="current_password" type="password" dir="ltr" autocomplete="current-password" required><div class="form-grid"><div><label for="password">كلمة المرور الجديدة</label><input id="password" name="password" type="password" dir="ltr" minlength="8" autocomplete="new-password" required></div><div><label for="password_confirmation">تأكيد كلمة المرور</label><input id="password_confirmation" name="password_confirmation" type="password" dir="ltr" autocomplete="new-password" required></div></div><div class="form-actions"><button>تغيير كلمة المرور</button></div></form></section>
+<section class="panel"><h2>حذف الحساب</h2><p class="muted">هذا الإجراء نهائي. لن تتمكن من الدخول أو متابعة تعلّمك بهذا الحساب بعد حذفه.</p>@foreach($errors->userDeletion->all() as $error)<p class="error">{{ $error }}</p>@endforeach<details class="advanced" @if($errors->userDeletion->any()) open @endif><summary>أرغب في حذف حسابي نهائيًا</summary><form method="post" action="{{ route('profile.destroy') }}">@csrf @method('delete')<label for="delete_password">كلمة المرور لتأكيد الحذف</label><input id="delete_password" name="password" type="password" autocomplete="current-password" required><div class="form-actions"><button class="danger">تأكيد حذف الحساب نهائيًا</button></div></form></details></section></div>
+@endsection
